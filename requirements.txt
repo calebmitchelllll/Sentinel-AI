@@ -1,0 +1,31 @@
+# Python dependencies for SentinelAI
+# Used if OpenClaw SDK has a Python component or for any utility scripts
+# Install with: pip install -r requirements.txt
+
+# OpenClaw multi-agent framework — install at hackathon time when available
+# openclaw
+
+# AWS SDK for Python (CloudTrail log ingestion scripts, if needed)
+boto3>=1.34.0
+botocore>=1.34.0
+
+# OpenAI-compatible client (OpenRouter uses the OpenAI API spec)
+openai>=1.12.0
+
+# HTTP client for OpenRouter / API calls
+httpx>=0.26.0
+requests>=2.31.0
+
+# Data handling
+pandas>=2.1.0
+python-dotenv>=1.0.0
+
+# JSON schema validation for agent outputs
+jsonschema>=4.21.0
+
+# PDF export (for incident report PDF generation)
+fpdf2>=2.7.0
+markdown>=3.5.0
+
+# Supabase Python client (if any server-side Python scripts touch the DB)
+supabase>=2.3.0
