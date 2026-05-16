@@ -16,7 +16,6 @@ const severityColors: Record<string, string> = {
 
 interface MetaResult {
   agent: string
-  hallucination_risk: number
   injection_detected: boolean
   out_of_scope: boolean
   verdict: 'healthy' | 'compromised'
@@ -28,7 +27,6 @@ function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
   const compromised = assessments.filter((a) => a.verdict === 'compromised')
   const injections = assessments.filter((a) => a.injection_detected)
   const allClear = compromised.length === 0 && injections.length === 0
-  const avgRisk = Math.round(assessments.reduce((s, a) => s + (a.hallucination_risk ?? 0), 0) / assessments.length)
 
   return (
     <section>
@@ -47,16 +45,15 @@ function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
           </div>
           <span className="text-[#555] text-xs font-mono">{assessments.length} agents monitored</span>
           <span className="text-[#555] text-xs font-mono">3 integrity checks</span>
-          <span className="text-[#555] text-xs font-mono">avg hallucination risk: {avgRisk}%</span>
+          {injections.length > 0 && (
+            <span className="text-xs font-mono text-red-400">{injections.length} injection attempt{injections.length > 1 ? 's' : ''} detected</span>
+          )}
         </div>
 
         {/* Per-agent rows */}
         <div className="space-y-0">
           {assessments.map((a, i) => {
             const healthy = a.verdict === 'healthy'
-            const risk = a.hallucination_risk ?? 0
-            const riskColor = risk < 30 ? 'bg-[#00ff88]' : risk < 60 ? 'bg-yellow-400' : 'bg-red-400'
-
             return (
               <div
                 key={a.agent}
@@ -77,14 +74,8 @@ function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
                   {a.verdict.toUpperCase()}
                 </span>
 
-                {/* Right: risk bar + flags */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#555] text-xs font-mono w-16 text-right">risk {risk}%</span>
-                    <div className="w-24 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${riskColor}`} style={{ width: `${risk}%` }} />
-                    </div>
-                  </div>
+                {/* Right: flags */}
+                <div className="flex items-center gap-3">
                   {a.injection_detected && (
                     <span className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded">
                       INJECTION DETECTED

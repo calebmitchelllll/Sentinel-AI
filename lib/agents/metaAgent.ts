@@ -6,7 +6,8 @@ const SYSTEM_PROMPT = `You are a meta-security agent monitoring other AI agents 
 const INJECTION_PATTERNS = [
   /ignore previous instructions/i,
   /disregard your system prompt/i,
-  /act as/i,
+  /\bact as if you(?:'re| are)/i,
+  /\bpretend (?:you are|to be) (?:a different|an? (?:unconstrained|unrestricted|evil))/i,
   /jailbreak/i,
   /ignore all previous/i,
   /forget your instructions/i,
@@ -16,7 +17,6 @@ const INJECTION_PATTERNS = [
 
 export interface MetaResult {
   agent: string
-  hallucination_risk: number
   injection_detected: boolean
   out_of_scope: boolean
   verdict: 'healthy' | 'compromised'
@@ -78,12 +78,17 @@ async function runMetaAgentCheck(agentName: string, output: string): Promise<Met
   if (injectionDetected) parsed.injection_detected = true
   if (parsed.injection_detected) parsed.verdict = 'compromised'
 
+  const injectionFlag = !!parsed.injection_detected
+  const outOfScopeFlag = !!parsed.out_of_scope
+
+  // Verdict is only compromised if there is a specific, attributable reason — not NIM's word alone
+  const verdict: 'healthy' | 'compromised' = (injectionFlag || outOfScopeFlag) ? 'compromised' : 'healthy'
+
   const result: MetaResult = {
     agent: agentName,
-    hallucination_risk: typeof parsed.hallucination_risk === 'number' ? parsed.hallucination_risk : 10,
-    injection_detected: !!parsed.injection_detected,
-    out_of_scope: !!parsed.out_of_scope,
-    verdict: parsed.verdict === 'compromised' ? 'compromised' : 'healthy',
+    injection_detected: injectionFlag,
+    out_of_scope: outOfScopeFlag,
+    verdict,
   }
 
   await benchmark_agent(agentName, result.verdict, result.injection_detected)
@@ -91,9 +96,5 @@ async function runMetaAgentCheck(agentName: string, output: string): Promise<Met
 }
 
 export async function runMetaCheck(agentNames: string[], outputs: string[]): Promise<MetaResult[]> {
-  const results: MetaResult[] = []
-  for (let i = 0; i < agentNames.length; i++) {
-    results.push(await runMetaAgentCheck(agentNames[i], outputs[i]))
-  }
-  return results
+  return Promise.all(agentNames.map((name, i) => runMetaAgentCheck(name, outputs[i])))
 }
