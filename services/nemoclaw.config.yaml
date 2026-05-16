@@ -1,0 +1,50 @@
+# Real NemoClaw assistant config for running the SentinelAI orchestrator inside
+# the OpenShell sandbox (Landlock + seccomp + network namespace isolation).
+#
+# Apply with:
+#   nemoclaw sentinelai connect --config services/nemoclaw.config.yaml
+#
+# This is honest-to-spec: SentinelAI's orchestrator runs inside the NemoClaw
+# sandbox; the orchestrator itself drives 6 cooperating sub-agents over the
+# Nemotron API.
+name: sentinelai
+description: |
+  Multi-agent cloud security investigation platform. Six cooperating agents
+  (Detective, Forensics, Remediation, Validator, Reporter, MetaSecurity) analyse
+  AWS CloudTrail logs, debate findings, and produce a structured incident report.
+
+runtime:
+  image: openshell/python311
+  resources:
+    cpu: 2
+    memory: 4Gi
+  policy:
+    landlock: strict
+    seccomp: default
+    network:
+      mode: namespaced
+      allow:
+        - integrate.api.nvidia.com   # Nemotron NIM
+        - "*.supabase.co"            # Persistence
+    filesystem:
+      readonly:
+        - /app/services
+      readwrite:
+        - /tmp
+
+inference:
+  provider: nvidia
+  model: nvidia/llama-3.1-nemotron-70b-instruct
+  api_key_ref: NVIDIA_API_KEY
+  fallback:
+    provider: nvidia
+    model: nvidia/llama-3.1-nemotron-8b-instruct
+
+entrypoint:
+  command: ["uvicorn", "services.nemoclaw_runner:app", "--host", "0.0.0.0", "--port", "8000"]
+  port: 8000
+
+monitoring:
+  health_check: /health
+  metrics: /metrics
+  meta_agent: enabled

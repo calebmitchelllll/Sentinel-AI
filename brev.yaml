@@ -1,0 +1,38 @@
+name: sentinelai
+description: SentinelAI — multi-agent cloud security investigation platform (NemoClaw + Nemotron)
+gpu: A10G
+image: nvidia/cuda:12.2.0-runtime-ubuntu22.04
+ports:
+  - 3000
+  - 8000
+
+# Brev provisions the environment using these commands.
+setup: |
+  set -e
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    curl ca-certificates git docker.io docker-compose-plugin \
+    python3.11 python3-pip nodejs npm
+  npm install -g npm@latest
+  if [ -f package.json ]; then npm install; fi
+  if [ -f services/requirements.txt ]; then pip install --break-system-packages -r services/requirements.txt; fi
+
+start: |
+  # Two ways to run on Brev:
+  #   a) inside NemoClaw sandbox (recommended for the demo's headline narrative):
+  #        curl -fsSL https://www.nvidia.com/nemoclaw.sh | NEMOCLAW_NON_INTERACTIVE=1 NEMOCLAW_ACCEPT_THIRD_PARTY_SOFTWARE=1 bash
+  #        nemoclaw sentinelai connect --config services/nemoclaw.config.yaml
+  #        npm run build && npm run start
+  #
+  #   b) plain docker-compose (works without a Linux host with Landlock):
+  docker compose up --build
+
+# Secrets are injected from `brev secret set ...` at runtime — they appear as env vars.
+secrets:
+  - NVIDIA_API_KEY
+  - NEMOCLAW_API_KEY
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - SUPABASE_SERVICE_ROLE_KEY
+  - NEXTAUTH_SECRET

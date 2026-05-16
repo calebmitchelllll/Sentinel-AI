@@ -1,5 +1,5 @@
 {
-  "name": "sentinelai",
+  "name": "sentinel-ai",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,27 +11,26 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudtrail": "^3.1048.0",
-    "@supabase/auth-helpers-nextjs": "^0.8.7",
-    "@supabase/supabase-js": "^2.39.0",
-    "autoprefixer": "^10.0.1",
-    "next": "14.2.0",
-    "postcss": "^8",
-    "react": "^18",
-    "react-dom": "^18",
-    "tailwindcss": "^3.4.1",
+    "@react-pdf/renderer": "^3.4.4",
+    "@supabase/ssr": "^0.5.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "next": "14.2.13",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
     "@types/uuid": "^9.0.0",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.0",
-    "typescript": "^5"
-  },
-  "notes": {
-    "openclaw": "Install @openclaw/sdk when available at hackathon — see lib/openclaw.ts for integration points",
-    "nemotron": "Uses OpenRouter API pointing to nvidia/llama-3.1-nemotron-70b-instruct"
+    "@types/node": "^20.16.10",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.13",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.2"
   }
 }
