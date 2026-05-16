@@ -33,28 +33,28 @@ export default function LiveDocumentation({ docs }: { docs: LiveDoc[] }) {
           placeholder="Search docs..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-white text-sm placeholder-[#888888] focus:outline-none focus:border-[#00ff88]"
+          className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-purple-500/40 transition-all"
         />
-        <div className="flex-1 overflow-y-auto space-y-2">
+        <div className="flex-1 overflow-y-auto space-y-1.5">
           {filtered.map((doc) => (
             <button
               key={doc.id}
               onClick={() => setSelected(doc)}
-              className={`w-full text-left p-3 rounded-lg border transition-colors ${
+              className={`w-full text-left p-3 rounded-xl border transition-all ${
                 selected?.id === doc.id
-                  ? 'border-[#00ff88] bg-[#00ff88]/10'
-                  : 'border-[#2a2a2a] bg-[#111111] hover:border-[#444444]'
+                  ? 'border-purple-500/30 bg-purple-500/[0.07]'
+                  : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
               }`}
             >
-              <p className="text-white text-xs font-mono truncate">
+              <p className="text-white/70 text-xs font-mono truncate">
                 Incident {doc.incident_id?.slice(0, 8)}...
               </p>
-              <p className="text-[#888888] text-xs mt-1">
+              <p className="text-white/25 text-xs mt-1 font-mono">
                 {new Date(doc.created_at).toLocaleString()}
               </p>
-              <div className="flex gap-1 flex-wrap mt-1">
+              <div className="flex gap-1 flex-wrap mt-1.5">
                 {(doc.tags || []).filter(Boolean).map((tag, i) => (
-                  <span key={i} className="px-1.5 py-0.5 rounded text-[10px] bg-[#2a2a2a] text-[#888888]">
+                  <span key={i} className="px-1.5 py-0.5 rounded text-[10px] bg-white/[0.05] text-white/30 border border-white/[0.06]">
                     {tag}
                   </span>
                 ))}
@@ -62,36 +62,36 @@ export default function LiveDocumentation({ docs }: { docs: LiveDoc[] }) {
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="text-[#888888] text-sm text-center py-4">No documents found.</p>
+            <p className="text-white/25 text-sm text-center py-4 font-mono">No documents found.</p>
           )}
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 overflow-y-auto rounded-lg border border-[#2a2a2a] bg-[#111111] p-6">
+      <div className="flex-1 overflow-y-auto glass rounded-xl p-6">
         {selected ? (
           <div className="prose prose-invert prose-sm max-w-none">
             <ReactMarkdown
               components={{
-                h1: ({ children }) => <h1 className="text-[#00ff88] text-2xl font-bold mb-4">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-[#00ff88] text-lg font-bold mt-6 mb-2">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-white text-base font-bold mt-4 mb-2">{children}</h3>,
-                p: ({ children }) => <p className="text-white text-sm leading-relaxed mb-3">{children}</p>,
-                li: ({ children }) => <li className="text-white text-sm">{children}</li>,
+                h1: ({ children }) => <h1 className="text-purple-400 text-2xl font-semibold mb-4 tracking-wide">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-purple-300 text-lg font-semibold mt-6 mb-2">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-white/80 text-base font-semibold mt-4 mb-2">{children}</h3>,
+                p: ({ children }) => <p className="text-white/60 text-sm leading-relaxed mb-3">{children}</p>,
+                li: ({ children }) => <li className="text-white/60 text-sm">{children}</li>,
                 code: ({ children }) => (
-                  <code className="bg-[#1a1a1a] text-[#00ff88] px-1 py-0.5 rounded font-mono text-xs">{children}</code>
+                  <code className="bg-white/[0.06] text-purple-300 px-1.5 py-0.5 rounded font-mono text-xs border border-white/[0.06]">{children}</code>
                 ),
                 pre: ({ children }) => (
-                  <pre className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 overflow-x-auto mb-4">{children}</pre>
+                  <pre className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 overflow-x-auto mb-4">{children}</pre>
                 ),
-                strong: ({ children }) => <strong className="text-[#00ff88] font-bold">{children}</strong>,
+                strong: ({ children }) => <strong className="text-purple-300 font-semibold">{children}</strong>,
               }}
             >
               {selected.content}
             </ReactMarkdown>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-[#888888]">
+          <div className="flex items-center justify-center h-full text-white/25 font-mono text-sm">
             Select a document from the list to view it.
           </div>
         )}

@@ -31,8 +31,8 @@ export default function AgentChat({ conversation }: { conversation: Message[] })
           >
             <div className="flex items-center gap-3 mb-2">
               <span className={`font-bold text-sm ${style.color}`}>{msg.agent}</span>
-              <span className="text-[#888888] text-xs">{style.role}</span>
-              <span className="ml-auto text-[#888888] text-xs">Agent #{i + 1}</span>
+              <span className="text-white/30 text-xs">{style.role}</span>
+              <span className="ml-auto text-white/30 text-xs">Agent #{i + 1}</span>
             </div>
             <pre className="font-mono text-sm text-white whitespace-pre-wrap break-words leading-relaxed">
               {msg.content}

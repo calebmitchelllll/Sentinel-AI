@@ -30,33 +30,37 @@ export default function DocsPage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <nav className="border-b border-[#2a2a2a] bg-[#111111] px-6 py-4">
+    <div className="min-h-screen">
+      <nav className="border-b border-white/[0.06] bg-black/30 backdrop-blur-xl px-6 py-4 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="text-xl font-bold font-mono">
-              <span className="text-[#00ff88]">Sentinel</span>
-              <span className="text-white">AI</span>
+            <Link href="/dashboard" className="text-xl font-thin tracking-[0.2em] uppercase">
+              <span className="gradient-text">Sentinel</span>
+              <span className="text-white/80">AI</span>
             </Link>
             <div className="hidden sm:flex gap-6">
-              <Link href="/dashboard" className="text-[#888888] hover:text-white text-sm font-mono transition-colors">Dashboard</Link>
-              <Link href="/docs" className="text-[#00ff88] text-sm font-mono">Docs</Link>
-              <Link href="/benchmarks" className="text-[#888888] hover:text-white text-sm font-mono transition-colors">Benchmarks</Link>
+              <Link href="/dashboard" className="text-white/30 hover:text-white/70 text-sm font-mono tracking-wide transition-colors">Dashboard</Link>
+              <Link href="/docs" className="text-purple-400 text-sm font-mono tracking-wide">Docs</Link>
+              <Link href="/benchmarks" className="text-white/30 hover:text-white/70 text-sm font-mono tracking-wide transition-colors">Benchmarks</Link>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-white font-bold text-2xl mb-6">
-          Living Documentation
-          <span className="ml-3 text-[#888888] text-base font-normal">({docs.length} documents)</span>
-        </h1>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="mb-8">
+          <p className="text-white/25 font-mono text-xs tracking-[0.35em] uppercase mb-3">Auto-generated Reports</p>
+          <h1 className="text-4xl font-thin tracking-[0.08em] uppercase">
+            <span className="gradient-text">Living</span>
+            <span className="text-white/80"> Documentation</span>
+            <span className="ml-4 text-white/20 text-xl font-normal normal-case tracking-normal">({docs.length})</span>
+          </h1>
+        </div>
 
         {loading ? (
-          <div className="text-[#00ff88] font-mono animate-pulse">Loading documents...</div>
+          <div className="text-purple-400 font-mono text-sm animate-pulse tracking-widest">Loading documents...</div>
         ) : docs.length === 0 ? (
-          <div className="rounded-lg border border-[#2a2a2a] bg-[#111111] p-8 text-center text-[#888888]">
+          <div className="glass rounded-xl p-10 text-center text-white/25 text-sm">
             No documents yet. Trigger an incident to generate living documentation.
           </div>
         ) : (

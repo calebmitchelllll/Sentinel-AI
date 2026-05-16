@@ -15,7 +15,7 @@ function isAttackEvent(significance: string): boolean {
 
 export default function AttackTimeline({ timeline }: { timeline: TimelineStep[] }) {
   if (!timeline || timeline.length === 0) {
-    return <p className="text-[#888888] text-sm">No timeline data available.</p>
+    return <p className="text-white/30 text-sm">No timeline data available.</p>
   }
 
   return (
@@ -28,25 +28,27 @@ export default function AttackTimeline({ timeline }: { timeline: TimelineStep[] 
           <div key={i} className="flex gap-4 relative">
             {/* Left: time */}
             <div className="w-36 shrink-0 pt-1">
-              <span className="font-mono text-xs text-[#888888]">{step.time.replace('T', ' ').replace('Z', '')}</span>
+              <span className="font-mono text-xs text-white/30">{step.time.replace('T', ' ').replace('Z', '')}</span>
             </div>
 
             {/* Center: dot + line */}
             <div className="flex flex-col items-center">
               <div
-                className={`w-3 h-3 rounded-full border-2 mt-1 z-10 ${
-                  isAttack ? 'bg-red-500 border-red-400' : 'bg-green-500 border-green-400'
+                className={`w-2.5 h-2.5 rounded-full border-2 mt-1.5 z-10 ${
+                  isAttack
+                    ? 'bg-red-500/80 border-red-400/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                    : 'bg-purple-500/80 border-purple-400/80 shadow-[0_0_8px_rgba(168,85,247,0.3)]'
                 }`}
               />
-              {!isLast && <div className="w-px flex-1 bg-[#2a2a2a] mt-1" />}
+              {!isLast && <div className="w-px flex-1 bg-white/[0.06] mt-1" />}
             </div>
 
             {/* Right: event + significance */}
             <div className="pb-6 flex-1">
-              <p className={`font-bold text-sm ${isAttack ? 'text-red-400' : 'text-green-400'}`}>
+              <p className={`font-semibold text-sm tracking-wide ${isAttack ? 'text-red-400' : 'text-purple-300'}`}>
                 {step.event}
               </p>
-              <p className="text-[#888888] text-xs mt-0.5 leading-relaxed">{step.significance}</p>
+              <p className="text-white/40 text-xs mt-0.5 leading-relaxed">{step.significance}</p>
             </div>
           </div>
         )

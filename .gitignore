@@ -41,3 +41,6 @@ next-env.d.ts
 cloudtrail-logs/
 data/cloudtrail-real.json
 services/__pycache__/
+stratus
+stratus-red-team_Darwin_arm64.tar.gz
+*.tar.gz

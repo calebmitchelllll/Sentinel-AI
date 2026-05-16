@@ -109,17 +109,17 @@ const ATTACK_SCENARIOS = [
 ]
 
 const severityColors: Record<string, string> = {
-  CRITICAL: 'bg-red-500/20 text-red-400 border border-red-500/60',
-  HIGH: 'bg-orange-500/20 text-orange-400 border border-orange-500/60',
-  MEDIUM: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/60',
-  LOW: 'bg-blue-500/20 text-blue-400 border border-blue-500/60',
+  CRITICAL: 'bg-red-500/15 text-red-400 border border-red-500/30',
+  HIGH: 'bg-orange-500/15 text-orange-400 border border-orange-500/30',
+  MEDIUM: 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30',
+  LOW: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
 }
 
-const severityGlow: Record<string, string> = {
-  CRITICAL: 'hover:border-red-500/60 hover:shadow-red-500/10',
-  HIGH: 'hover:border-orange-500/60 hover:shadow-orange-500/10',
-  MEDIUM: 'hover:border-yellow-500/60 hover:shadow-yellow-500/10',
-  LOW: 'hover:border-blue-500/60 hover:shadow-blue-500/10',
+const severityBorder: Record<string, string> = {
+  CRITICAL: 'hover:border-red-500/30 hover:shadow-[0_0_24px_rgba(239,68,68,0.07)]',
+  HIGH: 'hover:border-orange-500/30 hover:shadow-[0_0_24px_rgba(251,146,60,0.07)]',
+  MEDIUM: 'hover:border-yellow-500/30 hover:shadow-[0_0_24px_rgba(250,204,21,0.07)]',
+  LOW: 'hover:border-blue-500/30 hover:shadow-[0_0_24px_rgba(96,165,250,0.07)]',
 }
 
 export default function DashboardPage() {
@@ -204,33 +204,33 @@ export default function DashboardPage() {
   }
 
   function getDotStyle(state: string) {
-    if (state === 'investigating') return 'bg-yellow-400 animate-pulse'
-    if (state === 'healthy') return 'bg-[#00ff88]'
+    if (state === 'investigating') return 'bg-fuchsia-400 animate-pulse shadow-[0_0_6px_rgba(232,121,249,0.6)]'
+    if (state === 'healthy') return 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]'
     if (state === 'compromised') return 'bg-red-400'
-    return 'bg-[#2a2a2a]'
+    return 'bg-white/10'
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen">
       {/* Nav */}
-      <nav className="border-b border-[#2a2a2a] bg-[#111111] px-6 py-4">
+      <nav className="border-b border-white/[0.06] bg-black/30 backdrop-blur-xl px-6 py-4 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <span className="text-xl font-bold font-mono">
-              <span className="text-[#00ff88]">Sentinel</span>
-              <span className="text-white">AI</span>
+            <span className="text-xl font-thin tracking-[0.2em] uppercase">
+              <span className="gradient-text">Sentinel</span>
+              <span className="text-white/80">AI</span>
             </span>
             <div className="hidden sm:flex gap-6">
-              <Link href="/dashboard" className="text-[#00ff88] text-sm font-mono">Dashboard</Link>
-              <Link href="/docs" className="text-[#888888] hover:text-white text-sm font-mono transition-colors">Docs</Link>
-              <Link href="/benchmarks" className="text-[#888888] hover:text-white text-sm font-mono transition-colors">Benchmarks</Link>
+              <Link href="/dashboard" className="text-purple-400 text-sm font-mono tracking-wide">Dashboard</Link>
+              <Link href="/docs" className="text-white/30 hover:text-white/70 text-sm font-mono tracking-wide transition-colors">Docs</Link>
+              <Link href="/benchmarks" className="text-white/30 hover:text-white/70 text-sm font-mono tracking-wide transition-colors">Benchmarks</Link>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-[#888888] text-xs hidden sm:block">{user?.email}</span>
+            <span className="text-white/25 text-xs hidden sm:block font-mono">{user?.email}</span>
             <button
               onClick={handleSignOut}
-              className="px-3 py-1.5 border border-[#2a2a2a] rounded-lg text-[#888888] text-xs hover:border-[#444444] hover:text-white transition-colors"
+              className="px-3 py-1.5 border border-white/[0.08] rounded-lg text-white/40 text-xs hover:border-white/20 hover:text-white/70 transition-all"
             >
               Sign Out
             </button>
@@ -238,56 +238,56 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-            AWS Incident Response<br />
-            <span className="text-[#00ff88]">Powered by Autonomous AI Agents</span>
+      <main className="max-w-7xl mx-auto px-6 py-14">
+        {/* Hero header */}
+        <div className="mb-14">
+          <p className="text-white/25 font-mono text-xs tracking-[0.35em] uppercase mb-4">Multi-Agent AI Platform</p>
+          <h1 className="text-5xl sm:text-6xl font-thin tracking-[0.08em] uppercase leading-tight mb-5">
+            AWS Incident<br />
+            <span className="gradient-text">Response</span>
           </h1>
-          <p className="text-[#888888] text-sm max-w-xl">
+          <p className="text-white/35 text-sm max-w-lg leading-relaxed tracking-wide">
             Select an attack scenario to detonate. Six AI agents investigate in parallel and generate a full incident report in under 2 minutes.
           </p>
         </div>
 
         {/* Attack Scenario Selector / Running state */}
         {!triggering ? (
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-white font-mono text-sm font-bold">SIMULATED ATTACK SCENARIOS</span>
-              <span className="text-[#444] text-xs font-mono">— stratus-red-team techniques</span>
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-white/60 font-mono text-xs font-bold tracking-[0.25em] uppercase">Simulated Attack Scenarios</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ATTACK_SCENARIOS.map((scenario) => (
                 <button
                   key={scenario.id}
                   onClick={() => handleTrigger(scenario.id)}
-                  className={`text-left p-5 rounded-lg border border-[#2a2a2a] bg-[#111111] transition-all hover:shadow-lg ${severityGlow[scenario.severity]} group`}
+                  className={`text-left p-5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] transition-all hover:shadow-lg ${severityBorder[scenario.severity]} group`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[#888] font-mono text-lg">{scenario.icon}</span>
-                        <span className="text-white font-bold text-sm">{scenario.name}</span>
+                        <span className="text-white/30 font-mono text-base">{scenario.icon}</span>
+                        <span className="text-white/85 font-semibold text-sm tracking-wide">{scenario.name}</span>
                       </div>
-                      <span className="text-[#555] font-mono text-xs">{scenario.subtitle}</span>
+                      <span className="text-white/25 font-mono text-xs">{scenario.subtitle}</span>
                     </div>
                     <span className={`shrink-0 px-2 py-0.5 rounded text-xs font-bold font-mono ${severityColors[scenario.severity]}`}>
                       {scenario.severity}
                     </span>
                   </div>
 
-                  <p className="text-[#888888] text-xs leading-relaxed mb-4">
+                  <p className="text-white/35 text-xs leading-relaxed mb-4">
                     {scenario.description}
                   </p>
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-[#444] font-mono text-xs">{scenario.mitre}</span>
-                      <span className="text-[#333] text-xs">·</span>
-                      <span className="text-[#444] font-mono text-xs">{scenario.tactic}</span>
+                      <span className="text-white/20 font-mono text-xs">{scenario.mitre}</span>
+                      <span className="text-white/15 text-xs">·</span>
+                      <span className="text-white/20 font-mono text-xs">{scenario.tactic}</span>
                     </div>
-                    <span className="text-[#00ff88] text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-fuchsia-400 text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity">
                       Detonate →
                     </span>
                   </div>
@@ -296,34 +296,31 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="mb-12 rounded-lg border border-[#2a2a2a] bg-[#111111] p-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
-                <span className="text-[#00ff88] font-mono text-sm">
-                  Investigating: {ATTACK_SCENARIOS.find(s => s.id === triggering)?.name ?? triggering}
-                </span>
-              </div>
+          <div className="mb-16 glass rounded-2xl p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse shadow-[0_0_8px_rgba(232,121,249,0.7)]" />
+              <span className="text-fuchsia-300 font-mono text-sm tracking-wide">
+                Investigating: {ATTACK_SCENARIOS.find(s => s.id === triggering)?.name ?? triggering}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Left: investigative agents */}
               <div>
-                <p className="text-[#555] font-mono text-xs mb-3 uppercase tracking-widest">Investigative Agents</p>
+                <p className="text-white/25 font-mono text-xs mb-4 uppercase tracking-widest">Investigative Agents</p>
                 <div className="space-y-2">
                   {AGENTS.filter(a => a !== 'MetaAgent').map((agent) => (
                     <div
                       key={agent}
-                      className="flex items-center gap-3 px-4 py-2 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a]"
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/[0.05] bg-white/[0.02]"
                     >
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${getDotStyle(agentStates[agent] || 'idle')}`} />
-                      <span className="text-white text-xs font-mono flex-1">{agent}</span>
+                      <div className={`w-2 h-2 rounded-full shrink-0 transition-all ${getDotStyle(agentStates[agent] || 'idle')}`} />
+                      <span className="text-white/70 text-xs font-mono flex-1 tracking-wide">{agent}</span>
                       {agentStates[agent] === 'investigating' && (
-                        <span className="text-[#555] text-xs font-mono">analyzing...</span>
+                        <span className="text-white/25 text-xs font-mono">analyzing...</span>
                       )}
                       {agentStates[agent] === 'healthy' && (
-                        <span className="text-[#00ff88] text-xs font-mono">verified</span>
+                        <span className="text-emerald-400 text-xs font-mono">verified</span>
                       )}
                     </div>
                   ))}
@@ -332,16 +329,16 @@ export default function DashboardPage() {
 
               {/* Right: MetaAgent overseer */}
               <div>
-                <p className="text-[#555] font-mono text-xs mb-3 uppercase tracking-widest">Security Overseer</p>
-                <div className="px-4 py-4 rounded-lg border border-[#00ff88]/20 bg-[#0a0a0a] h-full">
+                <p className="text-white/25 font-mono text-xs mb-4 uppercase tracking-widest">Security Overseer</p>
+                <div className="px-5 py-5 rounded-xl border border-purple-500/20 bg-purple-500/[0.04] h-full">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse shrink-0" />
-                    <span className="text-[#00ff88] text-xs font-mono font-bold">MetaAgent</span>
+                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0 shadow-[0_0_6px_rgba(192,132,252,0.6)]" />
+                    <span className="text-purple-300 text-xs font-mono font-bold tracking-wider">MetaAgent</span>
                   </div>
-                  <p className="text-[#555] text-xs font-mono leading-relaxed">
+                  <p className="text-white/30 text-xs font-mono leading-relaxed">
                     Monitoring all agents for hallucination, prompt injection, and out-of-scope behavior in real time.
                   </p>
-                  <div className="mt-4 space-y-1.5">
+                  <div className="mt-5 space-y-2">
                     {['Batch 1: Detective + Forensics', 'Batch 2: Remediation + Validator', 'Batch 3: Reporter'].map((check, i) => {
                       const agentsDone = Object.values(agentStates).filter(s => s === 'healthy').length
                       const done = agentsDone >= (i + 1) * 2
@@ -349,10 +346,10 @@ export default function DashboardPage() {
                       return (
                         <div key={check} className="flex items-center gap-2">
                           <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                            done ? 'bg-[#00ff88]' : active ? 'bg-yellow-400 animate-pulse' : 'bg-[#2a2a2a]'
+                            done ? 'bg-emerald-400' : active ? 'bg-fuchsia-400 animate-pulse' : 'bg-white/10'
                           }`} />
                           <span className={`text-xs font-mono ${
-                            done ? 'text-[#00ff88]' : active ? 'text-yellow-400' : 'text-[#444]'
+                            done ? 'text-emerald-400' : active ? 'text-fuchsia-300' : 'text-white/20'
                           }`}>
                             {check}
                             {done && ' ✓'}
@@ -369,42 +366,42 @@ export default function DashboardPage() {
         )}
 
         {error && (
-          <div className="mb-6 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <div className="mb-8 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
             {error}
           </div>
         )}
 
         {/* Incident Feed */}
         <div>
-          <h2 className="text-white font-bold text-lg mb-4 font-mono">
-            Recent Incidents
-            <span className="ml-3 text-[#888888] text-sm font-normal">({incidents.length})</span>
-          </h2>
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-white/60 font-mono text-xs font-bold tracking-[0.25em] uppercase">Recent Incidents</h2>
+            <span className="text-white/20 text-xs font-mono">({incidents.length})</span>
+          </div>
 
           {incidents.length === 0 ? (
-            <div className="rounded-lg border border-[#2a2a2a] bg-[#111111] p-8 text-center text-[#888888] text-sm">
+            <div className="glass rounded-xl p-10 text-center text-white/25 text-sm">
               No incidents yet. Select an attack scenario above to start your first investigation.
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {incidents.map((incident) => (
                 <Link
                   key={incident.id}
                   href={`/incident/${incident.id}`}
-                  className="block rounded-lg border border-[#2a2a2a] bg-[#111111] p-4 hover:border-[#444444] transition-colors"
+                  className="block glass rounded-xl p-4 hover:bg-white/[0.04] transition-all group"
                 >
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono ${severityColors[incident.severity] ?? 'bg-gray-500/20 text-gray-400 border border-gray-500'}`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono ${severityColors[incident.severity] ?? 'bg-white/10 text-white/40 border border-white/10'}`}>
                         {incident.severity}
                       </span>
-                      <span className="text-white font-medium">{incident.title}</span>
+                      <span className="text-white/75 font-medium text-sm group-hover:text-white transition-colors">{incident.title}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className={`text-xs font-mono px-2 py-0.5 rounded ${incident.status === 'resolved' ? 'text-[#00ff88]' : 'text-yellow-400'}`}>
+                      <span className={`text-xs font-mono px-2 py-0.5 rounded ${incident.status === 'resolved' ? 'text-emerald-400' : 'text-yellow-400'}`}>
                         {incident.status}
                       </span>
-                      <span className="text-[#888888] text-xs">
+                      <span className="text-white/25 text-xs font-mono">
                         {new Date(incident.created_at).toLocaleString()}
                       </span>
                     </div>
