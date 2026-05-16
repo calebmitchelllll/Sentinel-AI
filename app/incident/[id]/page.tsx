@@ -1,91 +1,67 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { requireSession, createSupabaseServerClient } from "@/lib/supabase-server";
-import AgentChat from "@/components/AgentChat";
-import IncidentReport from "@/components/IncidentReport";
-import SeverityBadge from "@/components/SeverityBadge";
-import SimulatedAttackBadge from "@/components/SimulatedAttackBadge";
-import SimulationTimeline from "@/components/SimulationTimeline";
-import type { Incident, IncidentReport as Report } from "@/lib/types";
+"use client"
+import { useEffect, useState } from "react"
+import { createSupabaseBrowserClient } from "@/lib/supabase-client"
+import IncidentReportView from "@/components/IncidentReport"
 
-export const dynamic = "force-dynamic";
+export default function IncidentPage({ params }: { params: { id: string } }) {
+  const [incident, setIncident] = useState<any>(null)
+  const [report, setReport] = useState<any>(null)
 
-export default async function IncidentPage({ params }: { params: { id: string } }) {
-  await requireSession();
-  const supabase = createSupabaseServerClient();
-
-  const { data: incident } = await supabase
-    .from("incidents")
-    .select("*")
-    .eq("id", params.id)
-    .single();
-
-  if (!incident) notFound();
-
-  const { data: report } = await supabase
-    .from("incident_reports")
-    .select("*")
-    .eq("incident_id", params.id)
-    .maybeSingle();
-
-  const i = incident as Incident;
-  const r = (report as Report) || null;
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient()
+    async function load() {
+      const [{ data: inc }, { data: rep }] = await Promise.all([
+        supabase.from("incidents").select("*").eq("id", params.id).single(),
+        supabase.from("incident_reports").select("*").eq("incident_id", params.id).maybeSingle(),
+      ])
+      setIncident(inc)
+      setReport(rep)
+    }
+    load()
+  }, [params.id])
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <Link href="/dashboard" className="text-xs font-mono text-ink-dim hover:text-ink">
-            ← back to dashboard
-          </Link>
-          <h1 className="text-2xl font-bold mt-1">Incident {i.id.slice(0, 8)}</h1>
-          <div className="mt-2 flex items-center gap-3 flex-wrap">
-            <SeverityBadge severity={i.severity} />
-            <SimulatedAttackBadge />
-            <span className="text-xs font-mono text-ink-faint">{new Date(i.created_at).toLocaleString()}</span>
-            <StatusPill status={i.status} />
-          </div>
-          {i.summary && <p className="text-ink-dim text-sm mt-2 max-w-3xl">{i.summary}</p>}
-        </div>
+    <div className="min-h-screen bg-black text-white p-8 max-w-4xl mx-auto">
+
+      <a href="/dashboard" className="text-gray-500 text-sm font-mono hover:text-white">
+        ← back to dashboard
+      </a>
+
+      {/* Simulated attack banner */}
+      <div className="mt-6 mb-6 px-4 py-2 rounded-lg text-xs font-mono font-bold tracking-widest uppercase flex items-center gap-2"
+        style={{ background: "#a855f715", border: "1px solid #a855f740", color: "#c084fc" }}>
+        ⚠ Simulated Attack — Synthetic data only · No real systems affected
       </div>
 
-      <SimulationTimeline
-        incidentId={i.id}
-        incidentCreatedAt={i.created_at}
-        reportCreatedAt={r?.created_at ?? null}
-      />
-
-      {!r && (
-        <section>
-          <h2 className="font-mono text-sm text-ink-dim uppercase tracking-wider mb-2">
-            Live agent investigation
-          </h2>
-          <AgentChat incidentId={i.id} />
-        </section>
+      {incident && (
+        <div className="mb-8 border-b border-gray-800 pb-6">
+          <h1 className="text-3xl font-bold font-mono">
+            Incident {incident.id.slice(0, 8)}
+          </h1>
+          <div className="flex gap-3 mt-3 flex-wrap">
+            <span className="text-red-400 border border-red-400 px-3 py-1 text-xs font-mono rounded">
+              ● {incident.severity}
+            </span>
+            <span className="text-yellow-400 border border-yellow-400 px-3 py-1 text-xs font-mono rounded">
+              {incident.status?.toUpperCase()}
+            </span>
+            <span className="text-gray-400 text-sm font-mono">
+              {new Date(incident.created_at).toLocaleString()}
+            </span>
+          </div>
+          {incident.summary && (
+            <p className="text-gray-300 mt-4 text-sm leading-relaxed">
+              {incident.summary}
+            </p>
+          )}
+        </div>
       )}
 
-      {r && (
-        <section>
-          <IncidentReport report={r} />
-        </section>
-      )}
+      {report
+        ? <IncidentReportView report={report} />
+        : <p className="text-gray-600 font-mono text-sm">Report not yet available.</p>
+      }
+
     </div>
-  );
-}
-
-function StatusPill({ status }: { status: string }) {
-  const color =
-    status === "resolved"
-      ? "#22c55e"
-      : status === "investigating"
-      ? "#eab308"
-      : "#ef4444";
-  return (
-    <span
-      className="text-[10px] font-mono uppercase border rounded px-2 py-0.5"
-      style={{ color, borderColor: color + "55", backgroundColor: color + "15" }}
-    >
-      {status}
-    </span>
-  );
+  )
 }

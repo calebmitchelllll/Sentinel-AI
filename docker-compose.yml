@@ -5,16 +5,14 @@ services:
       dockerfile: services/Dockerfile
     container_name: sentinel-nemoclaw
     environment:
-      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-${NEMOCLAW_API_KEY:-ollama-local}}
-      - NEMOCLAW_API_KEY=${NEMOCLAW_API_KEY:-${NVIDIA_API_KEY:-ollama-local}}
-      - NEMOTRON_MODEL=${NEMOTRON_MODEL:-nvidia/llama-3.1-nemotron-70b-instruct}
-      - NEMOTRON_BASE_URL=${NEMOTRON_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - NEMOCLAW_API_KEY=${NEMOCLAW_API_KEY}
+      - NEMOTRON_MODEL=${NEMOTRON_MODEL}
+      - NEMOTRON_BASE_URL=${NEMOTRON_BASE_URL}
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - PORT=8000
       - CORS_ORIGINS=http://localhost:3000,http://web:3000
-    # Allows the orchestrator to reach Ollama running on the Brev host at
-    # http://host.docker.internal:11434/v1 (required on Linux hosts).
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -42,6 +40,9 @@ services:
       - NEMOCLAW_SERVICE_URL=http://nemoclaw:8000
       - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - NEMOTRON_BASE_URL=${NEMOTRON_BASE_URL}
+      - NEMOTRON_MODEL=${NEMOTRON_MODEL}
     ports:
       - "3000:3000"
     depends_on:

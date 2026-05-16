@@ -116,75 +116,34 @@ export async function runInvestigation(
   try {
     const detective   = agents.find((a) => a.id === "detective")!;
     const forensics   = agents.find((a) => a.id === "forensics")!;
-    const validator   = agents.find((a) => a.id === "validator")!;
     const remediation = agents.find((a) => a.id === "remediation")!;
     const reporter    = agents.find((a) => a.id === "reporter")!;
-    const meta        = agents.find((a) => a.id === "meta")!;
 
-    // ── Phase 1: Detective analysis ──────────────────────────────────────────
-    console.log("[orchestrator] Phase 1: Detective");
-    const detectiveMsg = await detective.process(context);
+    // ── Phase 1: Detective + Forensics in parallel ───────────────────────────
+    console.log("[orchestrator] Phase 1: Detective + Forensics (parallel)");
+    const t1 = Date.now();
+    const [detectiveMsg, forensicsMsg] = await Promise.all([
+      detective.process(context),
+      forensics.process(context),
+    ]);
     await collect(detectiveMsg);
-    console.log("[orchestrator] Phase 1 done, content length:", detectiveMsg.content.length);
-
-    // Meta monitors after Phase 1
-    console.log("[orchestrator] Meta check 1");
-    await collect(await runMetaCheck(meta, context));
-
-    // ── Phase 2: Forensics deep dive ─────────────────────────────────────────
-    console.log("[orchestrator] Phase 2: Forensics");
-    const forensicsMsg = await forensics.process(context);
     await collect(forensicsMsg);
-    console.log("[orchestrator] Phase 2 done");
+    console.log(`[orchestrator] Phase 1 done (${Date.now() - t1}ms)`);
 
-    // Meta monitors after Phase 2
-    console.log("[orchestrator] Meta check 2");
-    await collect(await runMetaCheck(meta, context));
-
-    // ── Phase 3: Validator challenges both ───────────────────────────────────
-    console.log("[orchestrator] Phase 3: Validator");
-    const validationMsg = await validator.process(context);
-    validationMsg.type = "challenge";
-    await collect(validationMsg);
-    console.log("[orchestrator] Phase 3 done");
-
-    // ── Phase 4: Rebuttal round ──────────────────────────────────────────────
-    console.log("[orchestrator] Phase 4: Rebuttals");
-    const detectiveRebuttal = await runRebuttal(detective, context, validationMsg);
-    await collect(detectiveRebuttal);
-
-    const forensicsRebuttal = await runRebuttal(forensics, context, validationMsg);
-    await collect(forensicsRebuttal);
-    console.log("[orchestrator] Phase 4 done");
-
-    // Meta monitors after debate
-    console.log("[orchestrator] Meta check 3");
-    await collect(await runMetaCheck(meta, context));
-
-    // ── Phase 5: Remediation ─────────────────────────────────────────────────
-    console.log("[orchestrator] Phase 5: Remediation");
+    // ── Phase 2: Remediation (has Detective + Forensics context) ────────────
+    console.log("[orchestrator] Phase 2: Remediation");
+    const t2 = Date.now();
     const remediationMsg = await remediation.process(context);
     await collect(remediationMsg);
-    console.log("[orchestrator] Phase 5 done");
+    console.log(`[orchestrator] Phase 2 done (${Date.now() - t2}ms)`);
 
-    // ── Phase 6: Validator validates remediation ──────────────────────────────
-    console.log("[orchestrator] Phase 6: Validator → Remediation");
-    const remValMsg = await validator.process(context);
-    remValMsg.type = "challenge";
-    remValMsg.targetAgentId = "remediation";
-    await collect(remValMsg);
-    console.log("[orchestrator] Phase 6 done");
-
-    // ── Phase 7: Reporter synthesises everything ──────────────────────────────
-    console.log("[orchestrator] Phase 7: Reporter");
+    // ── Phase 3: Reporter synthesises all three ──────────────────────────────
+    console.log("[orchestrator] Phase 3: Reporter");
+    const t3 = Date.now();
     const reportMsg = await reporter.process(context);
     reportMsg.type = "report";
     await collect(reportMsg);
-    console.log("[orchestrator] Phase 7 done, report length:", reportMsg.content.length);
-
-    // Final meta check
-    console.log("[orchestrator] Final meta check");
-    await collect(await runMetaCheck(meta, context));
+    console.log(`[orchestrator] Phase 3 done (${Date.now() - t3}ms)`);
     console.log("[orchestrator] Pipeline complete");
 
     // ── Parse final report ────────────────────────────────────────────────────
@@ -207,15 +166,36 @@ export async function runInvestigation(
     const overallSeverity = (report?.severity ?? detectOverallSeverity(allMessages)) as Severity;
 
     // ── Persist to Supabase ───────────────────────────────────────────────────
-    if (options.persist && report) {
+    if (options.persist) {
       try {
-        await saveIncidentToSupabase(incidentId, report, allMessages, Date.now() - startTime);
-        await saveIncidentReport(incidentId, report, reportMarkdown);
-        await appendLivingDoc(incidentId, reportMarkdown, report.tags ?? [], {
-          title: report.executiveSummary?.slice(0, 120) ?? `Incident ${incidentId}`,
-          severity: report.severity,
-          attack_type: report.tags?.[0] ?? null,
-        });
+        // Use a fallback report object so messages are always saved even if JSON parse failed
+        const persistReport: IncidentReport = report ?? ({
+          incidentId,
+          generatedAt: new Date().toISOString(),
+          severity: overallSeverity,
+          severityScore: 0,
+          executiveSummary: "Report generation failed — see raw agent messages below.",
+          attackTimeline: [],
+          rootCause: "See raw agent messages.",
+          blastRadius: "See raw agent messages.",
+          immediateActions: [],
+          longTermActions: [],
+          agentDebateSummary: [],
+          confidenceScore: 0,
+          tags: [],
+        } as unknown as IncidentReport);
+
+        await saveIncidentToSupabase(incidentId, persistReport, allMessages, Date.now() - startTime);
+
+        if (report) {
+          await saveIncidentReport(incidentId, report, reportMarkdown);
+          await appendLivingDoc(incidentId, reportMarkdown, report.tags ?? [], {
+            title: report.executiveSummary?.slice(0, 120) ?? `Incident ${incidentId}`,
+            severity: report.severity,
+            attack_type: report.tags?.[0] ?? null,
+          });
+        }
+
         await saveAgentBenchmarks(agentStates);
       } catch (err) {
         console.error("Supabase persist error:", err);

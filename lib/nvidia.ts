@@ -1,4 +1,4 @@
-export async function callNemotron(messages: any[], temperature = 0.2) {
+export async function callNemotron(messages: any[], temperature = 0.2, maxTokens = 2048) {
   if (process.env.MOCK_AGENTS === "true") {
     return getMockResponse(messages);
   }
@@ -28,7 +28,7 @@ export async function callNemotron(messages: any[], temperature = 0.2) {
         model,
         messages,
         temperature,
-        max_tokens: 4096,
+        max_tokens: maxTokens,
       }),
       signal: controller.signal,
     });

@@ -156,16 +156,15 @@ export async function getIncidentMessages(incidentId: string) {
 export async function saveAgentBenchmarks(states: AgentState[]): Promise<void> {
   const db = getClient();
   const rows = states.map((s) => ({
-    agent_id: s.id,
     agent_name: s.name,
-    benchmark_score: s.benchmarkScore,
-    tasks_completed: s.tasksCompleted,
-    times_overruled: s.timesOverruled,
-    jailbreak_attempts: s.jailbreakAttempts,
-    status: s.status,
-    recorded_at: new Date().toISOString(),
+    accuracy_score: s.benchmarkScore ?? 1.0,
+    tasks_completed: s.tasksCompleted ?? 0,
+    times_overruled: s.timesOverruled ?? 0,
+    jailbreak_attempts: s.jailbreakAttempts ?? 0,
+    health_status: s.status ?? "healthy",
+    last_updated: new Date().toISOString(),
   }));
-  const { error } = await db.from("agent_benchmarks").insert(rows);
+  const { error } = await db.from("agent_benchmarks").upsert(rows, { onConflict: "agent_name" });
   if (error) throw error;
 }
 
@@ -175,7 +174,7 @@ export async function getLatestAgentBenchmarks() {
   const { data, error } = await db
     .from("agent_benchmarks")
     .select("*")
-    .order("recorded_at", { ascending: false })
+    .order("last_updated", { ascending: false })
     .limit(6); // one per agent
   if (error) throw error;
   return data ?? [];

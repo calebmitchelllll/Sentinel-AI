@@ -92,7 +92,8 @@ export async function broadcastMessage(msg: AgentMessage): Promise<void> {
 export async function invokeAgent(
   agent: OpenClawAgent,
   context: InvestigationContext,
-  extra: Message[] = []
+  extra: Message[] = [],
+  maxTokens = 700
 ): Promise<AgentMessage> {
   const messages: Message[] = [
     { role: "system", content: agent.systemPrompt },
@@ -100,7 +101,7 @@ export async function invokeAgent(
     ...extra,
   ];
 
-  const content = await callNemotron(messages, 0.2);
+  const content = await callNemotron(messages, 0.2, maxTokens);
 
   const msg: AgentMessage = {
     id: crypto.randomUUID(),

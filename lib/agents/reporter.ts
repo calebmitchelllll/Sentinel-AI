@@ -9,68 +9,35 @@ import { AgentMessage, InvestigationContext } from "./types";
 
 const COLOR = "#8b5cf6"; // violet-500
 
-const SYSTEM_PROMPT = `You are the Reporter Agent in SentinelAI, an autonomous cloud security investigation platform.
+const SYSTEM_PROMPT = `You are the Reporter Agent in SentinelAI. Synthesize a multi-agent security investigation into a structured JSON incident report.
 
-ROLE: Listen to the entire multi-agent investigation conversation and synthesize it into a structured, executive-ready incident report.
+OUTPUT FORMAT — respond with ONLY a valid JSON object, starting with { and ending with }. No explanation, no markdown, no preamble.
 
-YOU HAVE ACCESS TO:
-- Raw CloudTrail logs
-- Complete agent conversation history (Detective → Forensics → Validator → Remediation → debates)
-
-YOUR RESPONSIBILITIES:
-1. EXECUTIVE SUMMARY — 2-3 sentences, non-technical, suitable for a CISO to read to a board in 5 minutes. Include what happened, what was stolen, and the business impact.
-2. SEVERITY SCORE — 1-10 with written justification (10 = nation-state attack with full database exfiltration; 1 = informational anomaly)
-3. ATTACK TIMELINE — Chronological sequence of every attacker action with timestamps. Use the Detective's attack path plus any corrections from the Validator.
-4. ROOT CAUSE — The Forensics agent's confirmed root cause, noting confidence level.
-5. BLAST RADIUS — What was definitely stolen, what was at risk, what services were accessed.
-6. IMMEDIATE ACTIONS — Top 3-5 immediate actions from the Remediation agent (focus on the highest-priority ones).
-7. LONG-TERM ACTIONS — Top 3-5 structural fixes, grouped by category.
-8. AGENT DEBATE SUMMARY — Document any disagreements between agents and how they were resolved. This is important for transparency.
-9. CONFIDENCE — Overall confidence in the report (0-100) based on evidence quality.
-
-WRITING STYLE:
-- Executive Summary: plain English, business impact focus, no jargon
-- Timeline: precise timestamps, active voice
-- Everything else: clear, concise technical language
-- Cite agent sources for key claims (e.g., "per Forensics Agent")
-
-TAGS to assign: derive from incident type (e.g., "credential-theft", "privilege-escalation", "s3-exfiltration", "insider-threat", "tor-network", "pii-breach")
-
-OUTPUT FORMAT — return ONLY a valid JSON object:
 {
-  "incidentId": "<use the one from context>",
-  "generatedAt": "<ISO timestamp>",
-  "severity": "CRITICAL|HIGH|MEDIUM|LOW",
-  "severityScore": <1–10>,
-  "executiveSummary": "<2-3 sentences, board-ready>",
+  "incidentId": "<from context>",
+  "generatedAt": "<ISO timestamp now>",
+  "severity": "CRITICAL",
+  "severityScore": 9,
+  "executiveSummary": "<2-3 sentences for a CISO: what happened, what was stolen, business impact>",
   "attackTimeline": [
-    {
-      "timestamp": "<ISO>",
-      "event": "<what happened>",
-      "actor": "<who performed the action>",
-      "impact": "<business/security impact>"
-    }
+    {"timestamp": "<ISO>", "event": "<action — actor — impact>"}
   ],
-  "rootCause": "<precise root cause with confidence level>",
-  "blastRadius": "<narrative paragraph covering confirmed and potential exposure>",
-  "immediateActions": ["<action 1>", "<action 2>", ...],
-  "longTermActions": ["<action 1>", "<action 2>", ...],
+  "rootCause": "<one sentence: how attacker gained access and why it succeeded>",
+  "blastRadius": "<one paragraph: confirmed stolen data, at-risk resources, services accessed>",
+  "immediateActions": ["<action 1>", "<action 2>", "<action 3>", "<action 4>", "<action 5>"],
+  "longTermActions": ["<fix 1>", "<fix 2>", "<fix 3>", "<fix 4>", "<fix 5>"],
   "agentDebateSummary": [
-    {
-      "topic": "<what was debated>",
-      "positions": {
-        "detective": "<detective's position>",
-        "forensics": "<forensics position>",
-        "validator": "<validator's challenge>"
-      },
-      "resolution": "<how it was resolved>"
-    }
+    {"topic": "<disputed claim>", "resolution": "<how agents resolved it>"}
   ],
-  "confidenceScore": <0–100>,
-  "tags": ["<tag1>", "<tag2>", ...]
+  "confidenceScore": 90,
+  "tags": ["credential-theft", "privilege-escalation", "s3-exfiltration", "pii-breach"]
 }
 
-Return ONLY the JSON. No preamble, no markdown fences.`;
+RULES:
+- severity must be CRITICAL/HIGH/MEDIUM/LOW
+- attackTimeline entries use format "timestamp — event — actor — impact" in the event field
+- immediateActions and longTermActions are plain strings, no sub-objects
+- Start response with { immediately`;
 
 const generateReportTool: OpenClawTool = {
   name: "generate_report",
@@ -119,24 +86,79 @@ export function createReporterAgent(): OpenClawAgent {
     async process(context: InvestigationContext): Promise<AgentMessage> {
       updateAgentStatus("reporter", "investigating");
 
-      const msg = await invokeAgent(
-        agent,
-        context,
+      // Build a condensed summary of each agent's key findings
+      // (avoids sending full CoT + raw logs which crowds out the output tokens)
+      const summaries = context.conversationHistory
+        .filter((m) => m.agentName !== "MetaSecurity")
+        .map((m) => {
+          const snippet = extractKeySentences(m.content);
+          return `[${m.agentName.toUpperCase()}]: ${snippet}`;
+        })
+        .join("\n\n");
+
+      const { callNemotron: call } = await import("../nvidia");
+      const content = await call(
         [
+          { role: "system", content: agent.systemPrompt },
           {
             role: "user",
-            content: `All agents have completed their analysis (see conversation history above). The incident ID is ${context.incidentId}. Generate the complete structured incident report as JSON now.`,
+            content: `INCIDENT ID: ${context.incidentId}\n\nAGENT FINDINGS SUMMARY:\n${summaries}`,
           },
-        ]
+          {
+            role: "user",
+            content: `Generate the JSON incident report now. Start immediately with {`,
+          },
+        ],
+        0.1,
+        2000
       );
 
-      msg.type = "report";
+      const msg: import("./types").AgentMessage = {
+        id: crypto.randomUUID(),
+        agentId: agent.id,
+        agentName: agent.name,
+        agentColor: agent.color,
+        content,
+        timestamp: new Date().toISOString(),
+        type: "report",
+        metadata: {},
+      };
+
+      await (await import("../openclaw")).broadcastMessage(msg);
+
       recordTaskCompletion("reporter");
       updateAgentStatus("reporter", "idle");
       return msg;
     },
   };
   return agent;
+}
+
+function extractKeySentences(raw: string): string {
+  // Try to parse and extract the most meaningful field
+  try {
+    const json = JSON.parse(raw);
+    if (json.summary) return json.summary;
+    if (json.executiveSummary) return json.executiveSummary;
+    if (json.overallAssessment) return json.overallAssessment;
+    if (json.rootCause) return `Root cause: ${json.rootCause}`;
+    if (json.overallSeverity) return `Severity: ${json.overallSeverity}. ${JSON.stringify(json).substring(0, 300)}`;
+    return JSON.stringify(json).substring(0, 400);
+  } catch {}
+
+  // Find the last JSON block
+  const last = raw.lastIndexOf("{");
+  if (last > 0) {
+    const tail = raw.substring(last);
+    try { return JSON.stringify(JSON.parse(tail)).substring(0, 400); } catch {}
+  }
+
+  // "Finding N –" format — grab first 500 chars
+  if (/Finding \d+/i.test(raw)) return raw.substring(0, 500);
+
+  // Strip CoT preamble, return last meaningful chunk
+  const trimmed = raw.replace(/^(We need|Let'?s|Now |We must)[^\n]*\n/gim, "").trim();
+  return trimmed.substring(Math.max(0, trimmed.length - 400));
 }
 
 // Converts a JSON IncidentReport into a human-readable markdown document
