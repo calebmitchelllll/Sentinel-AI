@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create incident', details: createError }, { status: 500 })
     }
 
-    const { report, conversation, attackTimeline } = await runInvestigation(incident.id, cloudtrailEvents)
+    const { report, conversation, attackTimeline } = await runInvestigation(incident.id, cloudtrailEvents, techniqueId)
 
     return NextResponse.json({
       incidentId: incident.id,

@@ -5,14 +5,14 @@ const client = new OpenAI({
   baseURL: process.env.NEMOTRON_BASE_URL!,
 })
 
-export async function callNemotron(systemPrompt: string, userMessage: string): Promise<string> {
+export async function callNemotron(systemPrompt: string, userMessage: string, maxTokens = 400): Promise<string> {
   const response = await client.chat.completions.create({
     model: process.env.NEMOTRON_MODEL!,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage },
     ],
-    max_tokens: 400,
+    max_tokens: maxTokens,
     temperature: 0.1,
   })
 

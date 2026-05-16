@@ -69,7 +69,7 @@ export default function IncidentPage() {
       doc.rect(0, 0, 210, 297, 'F')
 
       addText('SentinelAI — Incident Report', 18, [0, 255, 136])
-      addText(`Severity: ${report.severityScore || 'UNKNOWN'}  |  Confidence: ${report.confidence || 0}%`, 11, [200, 200, 200])
+      addText(`Severity: ${report.severityScore || 'UNKNOWN'}`, 11, [200, 200, 200])
       addText(`Date: ${new Date(incident.created_at).toLocaleString()}`, 9, [136, 136, 136])
       y += 4
 
@@ -114,7 +114,6 @@ export default function IncidentPage() {
     const content = `# Security Incident Report
 
 **Severity:** ${report.severityScore}
-**Confidence:** ${report.confidence}%
 **Date:** ${new Date(incident.created_at).toLocaleString()}
 
 ## Executive Summary

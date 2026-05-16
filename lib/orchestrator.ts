@@ -15,33 +15,10 @@ function withTimeout(promise: Promise<string>, fallback: string): Promise<string
   ])
 }
 
-const HARDCODED_TIMELINE = [
-  { time: '2024-01-21T07:13:22Z', event: 'GetCallerIdentity', significance: 'Attacker reconnaissance from Tor exit node 185.220.101.47' },
-  { time: '2024-01-21T07:14:05Z', event: 'ListUsers', significance: 'IAM enumeration to map user accounts in the organization' },
-  { time: '2024-01-21T07:15:33Z', event: 'AttachUserPolicy', significance: 'Privilege escalation — AdministratorAccess policy attached to dev-john' },
-  { time: '2024-01-21T07:16:01Z', event: 'ListBuckets', significance: 'S3 enumeration revealed corp-sensitive-data bucket' },
-  { time: '2024-01-21T07:16:44Z', event: 'GetObject hr/employees.csv', significance: 'Data exfiltration — employee PII downloaded from corp-sensitive-data' },
-  { time: '2024-01-21T07:17:02Z', event: 'GetObject finance/payroll-q1.csv', significance: 'Data exfiltration — financial payroll data downloaded from corp-sensitive-data' },
-]
-
-function buildAttackTimeline(
-  conversation: { agent: string; content: string }[],
-  report: any
-): { time: string; event: string; significance: string }[] {
-  const reportTimeline = report?.attackTimeline
-  if (Array.isArray(reportTimeline) && reportTimeline.length >= 4) {
-    const hasPlaceholders = reportTimeline.some(
-      (s: any) => s.time === 'string' || s.event === 'string' || s.significance === 'string'
-    )
-    if (!hasPlaceholders) return reportTimeline
-  }
-
-  return HARDCODED_TIMELINE
-}
-
 export async function runInvestigation(
   incidentId: string,
-  cloudtrailEvents: any[]
+  cloudtrailEvents: any[],
+  techniqueId: string
 ): Promise<{ report: any; conversation: { agent: string; content: string }[]; attackTimeline: any[] }> {
   const conversation: { agent: string; content: string }[] = []
 
@@ -79,7 +56,6 @@ export async function runInvestigation(
       immediateActions: [],
       longtermActions: [],
       agentDebateSummary: 'Timeout',
-      confidence: 0,
     })
   )
   conversation.push({ agent: 'Reporter', content: reporterOut })
@@ -95,19 +71,20 @@ export async function runInvestigation(
     report = { executiveSummary: reporterOut, severityScore: 'HIGH' }
   }
 
-  const attackTimeline = buildAttackTimeline(conversation, report)
+  const attackTimeline: { time: string; event: string; significance: string }[] =
+    Array.isArray(report.attackTimeline) && report.attackTimeline.length > 0
+      ? report.attackTimeline
+      : []
 
-  // Update incidents table (using actual columns: summary, severity, status, attack_type)
   await supabaseAdmin
     .from('incidents')
     .update({
       status: 'resolved',
       severity: report.severityScore || 'HIGH',
-      attack_type: 'credential-theft, privilege-escalation, data-exfiltration',
+      attack_type: techniqueId,
     })
     .eq('id', incidentId)
 
-  // Store full investigation data as a sentinel-data living_doc
   const sentinelData = JSON.stringify({ report, agent_conversation: conversation, attack_timeline: attackTimeline })
   await supabaseAdmin.from('living_docs').insert({
     incident_id: incidentId,
@@ -115,18 +92,17 @@ export async function runInvestigation(
     content_markdown: sentinelData,
     tags: ['sentinel-data'],
     severity: report.severityScore || 'HIGH',
-    attack_type: 'credential-theft',
+    attack_type: techniqueId,
   })
 
-  // Store human-readable markdown as a separate living_doc
   const markdown = format_markdown(report, conversation, attackTimeline)
   await supabaseAdmin.from('living_docs').insert({
     incident_id: incidentId,
-    title: `Security Report: AWS Credential Compromise`,
+    title: `Security Report: ${techniqueId}`,
     content_markdown: markdown,
-    tags: [report.severityScore || 'HIGH', 'privilege-escalation', 's3-exfiltration'],
+    tags: [report.severityScore || 'HIGH', techniqueId],
     severity: report.severityScore || 'HIGH',
-    attack_type: 'credential-theft',
+    attack_type: techniqueId,
   })
 
   return { report, conversation, attackTimeline }
