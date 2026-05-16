@@ -104,9 +104,18 @@ function buildReportFromFacts(context: string): any {
   const severity = extractSeverity(context)
   const attackType = detectAttackType(context)
 
+  // Use only IPs that appear in the authoritative timeline — avoids naming IPs
+  // found in agent commentary that never actually appeared in attack events
+  const timelineBlock = getRawSection(context, 'STRUCTURED_TIMELINE')
+  const timelineIPs = timelineBlock
+    ? Array.from(new Set(timelineBlock.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || []))
+        .filter(ip => !ip.startsWith('127.') && !ip.startsWith('10.0') && !ip.startsWith('192.168'))
+    : []
+  const effectiveIPs = timelineIPs.length > 0 ? timelineIPs : ips
+
   const userStr = users.slice(0, 2).join(', ') || 'unknown IAM user'
   const keyStr = keys.join(', ') || 'unknown access key'
-  const ipStr = ips.slice(0, 2).join(', ') || 'unknown IP'
+  const ipStr = effectiveIPs.slice(0, 2).join(', ') || 'unknown IP'
 
   // Parse attack timeline — use pre-computed structured block first (always reliable)
   const attackTimeline: { time: string; event: string; significance: string }[] = []
@@ -154,8 +163,8 @@ function buildReportFromFacts(context: string): any {
         users[0]
           ? `Detach all active IAM policies from ${users[0]} and audit what permissions were exercised during the attack window`
           : 'Audit and revoke IAM permissions for all affected identities',
-        ips.length > 0
-          ? `Block attacker IP(s) ${ips.slice(0, 2).join(', ')} via a deny rule in your VPC security group or WAF`
+        effectiveIPs.length > 0
+          ? `Block attacker IP(s) ${effectiveIPs.slice(0, 2).join(', ')} via a deny rule in your VPC security group or WAF`
           : 'Enforce IP-based access restrictions on sensitive IAM operations',
         'Rotate any secrets, tokens, or credentials that were potentially accessed or exfiltrated during the incident',
       ]
@@ -174,7 +183,7 @@ function buildReportFromFacts(context: string): any {
     .trim()
   const blastRadius = forensicsBlast && forensicsBlast.length > 20
     ? forensicsBlast
-    : `IAM user ${userStr} compromised via key ${keyStr}. Attacker IP(s) ${ipStr} performed ${attackType} across ${timestamps.length} API calls.`
+    : `IAM user ${userStr} compromised via key ${keyStr}. Attacker IP(s) ${ipStr} performed ${attackType}.`
 
   // Extract long-term hardening from remediation LONG-TERM section
   const NIM_GARBAGE = /\b(provide|produce|list from|section heading|suspicious events|attack path|severity assessment|let'?s|what you must|stop the bleed)\b/i
@@ -229,7 +238,7 @@ function buildReportFromFacts(context: string): any {
     blastRadius,
     immediateActions,
     longtermActions,
-    agentDebateSummary: `Detective flagged ${ipStr} as anomalous source IPs; Forensics confirmed ${keys.length} compromised key(s) used from ${ips.length} IP(s) for ${attackType}. Validator challenged findings; MetaAgent verified pipeline integrity.`,
+    agentDebateSummary: `Detective flagged ${ipStr} as anomalous source IPs; Forensics confirmed ${keys.length} compromised key(s) used from ${effectiveIPs.length} IP(s) for ${attackType}. Validator challenged findings; MetaAgent verified pipeline integrity.`,
   }
 }
 
