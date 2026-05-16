@@ -4,7 +4,7 @@ import { runForensics } from './agents/forensics'
 import { runRemediation } from './agents/remediation'
 import { runValidator } from './agents/validator'
 import { runReporter, format_markdown } from './agents/reporter'
-import { runMetaCheck } from './agents/metaAgent'
+import { runMetaCheck, MetaResult } from './agents/metaAgent'
 
 const TIMEOUT_MS = 12000
 
@@ -19,8 +19,9 @@ export async function runInvestigation(
   incidentId: string,
   cloudtrailEvents: any[],
   techniqueId: string
-): Promise<{ report: any; conversation: { agent: string; content: string }[]; attackTimeline: any[] }> {
+): Promise<{ report: any; conversation: { agent: string; content: string }[]; attackTimeline: any[]; metaAssessments: MetaResult[] }> {
   const conversation: { agent: string; content: string }[] = []
+  const allMetaResults: MetaResult[] = []
 
   // Batch 1: Detective + Forensics in parallel
   const [detectiveOut, forensicsOut] = await Promise.all([
@@ -30,7 +31,8 @@ export async function runInvestigation(
   conversation.push({ agent: 'Detective', content: detectiveOut })
   conversation.push({ agent: 'Forensics', content: forensicsOut })
 
-  await runMetaCheck(['Detective', 'Forensics'], [detectiveOut, forensicsOut])
+  const meta1 = await runMetaCheck(['Detective', 'Forensics'], [detectiveOut, forensicsOut])
+  allMetaResults.push(...meta1)
 
   // Batch 2: Remediation + Validator in parallel
   const context1 = `DETECTIVE FINDINGS:\n${detectiveOut}\n\nFORENSICS FINDINGS:\n${forensicsOut}`
@@ -41,7 +43,8 @@ export async function runInvestigation(
   conversation.push({ agent: 'Remediation', content: remediationOut })
   conversation.push({ agent: 'Validator', content: validatorOut })
 
-  await runMetaCheck(['Remediation', 'Validator'], [remediationOut, validatorOut])
+  const meta2 = await runMetaCheck(['Remediation', 'Validator'], [remediationOut, validatorOut])
+  allMetaResults.push(...meta2)
 
   // Reporter
   const context2 = conversation.map((m) => `${m.agent.toUpperCase()}:\n${m.content}`).join('\n\n')
@@ -60,7 +63,8 @@ export async function runInvestigation(
   )
   conversation.push({ agent: 'Reporter', content: reporterOut })
 
-  await runMetaCheck(['Reporter'], [reporterOut])
+  const meta3 = await runMetaCheck(['Reporter'], [reporterOut])
+  allMetaResults.push(...meta3)
 
   // Parse report JSON
   let report: any = {}
@@ -85,7 +89,13 @@ export async function runInvestigation(
     })
     .eq('id', incidentId)
 
-  const sentinelData = JSON.stringify({ report, agent_conversation: conversation, attack_timeline: attackTimeline })
+  const sentinelData = JSON.stringify({
+    report,
+    agent_conversation: conversation,
+    attack_timeline: attackTimeline,
+    meta_assessments: allMetaResults,
+  })
+
   await supabaseAdmin.from('living_docs').insert({
     incident_id: incidentId,
     title: `sentinel-data-${incidentId}`,
@@ -105,5 +115,5 @@ export async function runInvestigation(
     attack_type: techniqueId,
   })
 
-  return { report, conversation, attackTimeline }
+  return { report, conversation, attackTimeline, metaAssessments: allMetaResults }
 }

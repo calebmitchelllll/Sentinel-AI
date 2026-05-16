@@ -297,22 +297,73 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="mb-12 rounded-lg border border-[#2a2a2a] bg-[#111111] p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
-              <span className="text-[#00ff88] font-mono text-sm">
-                Investigating: {ATTACK_SCENARIOS.find(s => s.id === triggering)?.name ?? triggering}
-              </span>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
+                <span className="text-[#00ff88] font-mono text-sm">
+                  Investigating: {ATTACK_SCENARIOS.find(s => s.id === triggering)?.name ?? triggering}
+                </span>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {AGENTS.map((agent) => (
-                <div
-                  key={agent}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a]"
-                >
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getDotStyle(agentStates[agent] || 'idle')}`} />
-                  <span className="text-white text-xs font-mono">{agent}</span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Left: investigative agents */}
+              <div>
+                <p className="text-[#555] font-mono text-xs mb-3 uppercase tracking-widest">Investigative Agents</p>
+                <div className="space-y-2">
+                  {AGENTS.filter(a => a !== 'MetaAgent').map((agent) => (
+                    <div
+                      key={agent}
+                      className="flex items-center gap-3 px-4 py-2 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a]"
+                    >
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${getDotStyle(agentStates[agent] || 'idle')}`} />
+                      <span className="text-white text-xs font-mono flex-1">{agent}</span>
+                      {agentStates[agent] === 'investigating' && (
+                        <span className="text-[#555] text-xs font-mono">analyzing...</span>
+                      )}
+                      {agentStates[agent] === 'healthy' && (
+                        <span className="text-[#00ff88] text-xs font-mono">verified</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Right: MetaAgent overseer */}
+              <div>
+                <p className="text-[#555] font-mono text-xs mb-3 uppercase tracking-widest">Security Overseer</p>
+                <div className="px-4 py-4 rounded-lg border border-[#00ff88]/20 bg-[#0a0a0a] h-full">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse shrink-0" />
+                    <span className="text-[#00ff88] text-xs font-mono font-bold">MetaAgent</span>
+                  </div>
+                  <p className="text-[#555] text-xs font-mono leading-relaxed">
+                    Monitoring all agents for hallucination, prompt injection, and out-of-scope behavior in real time.
+                  </p>
+                  <div className="mt-4 space-y-1.5">
+                    {['Batch 1: Detective + Forensics', 'Batch 2: Remediation + Validator', 'Batch 3: Reporter'].map((check, i) => {
+                      const agentsDone = Object.values(agentStates).filter(s => s === 'healthy').length
+                      const done = agentsDone >= (i + 1) * 2
+                      const active = !done && agentsDone >= i * 2
+                      return (
+                        <div key={check} className="flex items-center gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            done ? 'bg-[#00ff88]' : active ? 'bg-yellow-400 animate-pulse' : 'bg-[#2a2a2a]'
+                          }`} />
+                          <span className={`text-xs font-mono ${
+                            done ? 'text-[#00ff88]' : active ? 'text-yellow-400' : 'text-[#444]'
+                          }`}>
+                            {check}
+                            {done && ' ✓'}
+                            {active && ' — checking...'}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

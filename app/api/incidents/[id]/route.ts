@@ -34,6 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   let report = {}
   let agent_conversation: any[] = []
   let attack_timeline: any[] = []
+  let meta_assessments: any[] = []
 
   if (sentinelDocs && sentinelDocs.length > 0) {
     try {
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       report = parsed.report || {}
       agent_conversation = parsed.agent_conversation || []
       attack_timeline = parsed.attack_timeline || []
+      meta_assessments = parsed.meta_assessments || []
     } catch {
       // sentinel data malformed — keep defaults
     }
@@ -52,5 +54,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     report,
     agent_conversation,
     attack_timeline,
+    meta_assessments,
   })
 }

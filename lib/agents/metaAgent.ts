@@ -14,13 +14,16 @@ const INJECTION_PATTERNS = [
   /override your/i,
 ]
 
-function detect_prompt_injection(output: string): boolean {
-  return INJECTION_PATTERNS.some((pattern) => pattern.test(output))
+export interface MetaResult {
+  agent: string
+  hallucination_risk: number
+  injection_detected: boolean
+  out_of_scope: boolean
+  verdict: 'healthy' | 'compromised'
 }
 
-function monitor_agent_behavior(agentName: string, output: string): string {
-  const injectionDetected = detect_prompt_injection(output)
-  return `Agent: ${agentName}\nInjection pre-check: ${injectionDetected ? 'FLAGGED' : 'clean'}\nOutput (first 300 chars): ${output.slice(0, 300)}`
+function detect_prompt_injection(output: string): boolean {
+  return INJECTION_PATTERNS.some((pattern) => pattern.test(output))
 }
 
 async function benchmark_agent(agentName: string, verdict: string, injectionDetected: boolean): Promise<void> {
@@ -55,29 +58,17 @@ async function benchmark_agent(agentName: string, verdict: string, injectionDete
   }
 
   if (isCompromised) {
-    console.warn(`[MetaAgent] Agent ${agentName} flagged as compromised. Health status updated in DB.`)
+    console.warn(`[MetaAgent] Agent ${agentName} flagged as compromised.`)
   }
 }
 
-export async function runMetaAgentCheck(agentName: string, output: string): Promise<string> {
+async function runMetaAgentCheck(agentName: string, output: string): Promise<MetaResult> {
   const injectionDetected = detect_prompt_injection(output)
-  const prompt = monitor_agent_behavior(agentName, output)
+  const prompt = `Agent: ${agentName}\nInjection pre-check: ${injectionDetected ? 'FLAGGED' : 'clean'}\nOutput (first 300 chars): ${output.slice(0, 300)}`
 
-  let result: string
-  try {
-    result = await callNemotron(SYSTEM_PROMPT, prompt)
-  } catch {
-    result = JSON.stringify({
-      hallucination_risk: 10,
-      injection_detected: injectionDetected,
-      out_of_scope: false,
-      verdict: 'healthy',
-    })
-  }
-
-  // Parse result to extract verdict
   let parsed: any = {}
   try {
+    const result = await callNemotron(SYSTEM_PROMPT, prompt)
     const jsonMatch = result.match(/\{[\s\S]*\}/)
     if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
   } catch {
@@ -87,13 +78,22 @@ export async function runMetaAgentCheck(agentName: string, output: string): Prom
   if (injectionDetected) parsed.injection_detected = true
   if (parsed.injection_detected) parsed.verdict = 'compromised'
 
-  await benchmark_agent(agentName, parsed.verdict || 'healthy', injectionDetected)
+  const result: MetaResult = {
+    agent: agentName,
+    hallucination_risk: typeof parsed.hallucination_risk === 'number' ? parsed.hallucination_risk : 10,
+    injection_detected: !!parsed.injection_detected,
+    out_of_scope: !!parsed.out_of_scope,
+    verdict: parsed.verdict === 'compromised' ? 'compromised' : 'healthy',
+  }
 
-  return JSON.stringify(parsed)
+  await benchmark_agent(agentName, result.verdict, result.injection_detected)
+  return result
 }
 
-export async function runMetaCheck(agentNames: string[], outputs: string[]): Promise<void> {
+export async function runMetaCheck(agentNames: string[], outputs: string[]): Promise<MetaResult[]> {
+  const results: MetaResult[] = []
   for (let i = 0; i < agentNames.length; i++) {
-    await runMetaAgentCheck(agentNames[i], outputs[i])
+    results.push(await runMetaAgentCheck(agentNames[i], outputs[i]))
   }
+  return results
 }

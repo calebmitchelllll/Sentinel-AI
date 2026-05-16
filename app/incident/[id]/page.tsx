@@ -14,6 +14,100 @@ const severityColors: Record<string, string> = {
   LOW: 'bg-green-500/20 text-green-400 border border-green-500',
 }
 
+interface MetaResult {
+  agent: string
+  hallucination_risk: number
+  injection_detected: boolean
+  out_of_scope: boolean
+  verdict: 'healthy' | 'compromised'
+}
+
+function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
+  if (!assessments || assessments.length === 0) return null
+
+  const compromised = assessments.filter((a) => a.verdict === 'compromised')
+  const injections = assessments.filter((a) => a.injection_detected)
+  const allClear = compromised.length === 0 && injections.length === 0
+  const avgRisk = Math.round(assessments.reduce((s, a) => s + (a.hallucination_risk ?? 0), 0) / assessments.length)
+
+  return (
+    <section>
+      <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
+        Meta Security Audit
+      </h2>
+      <div className="rounded-lg border border-[#2a2a2a] bg-[#111111] p-6">
+
+        {/* Summary bar */}
+        <div className="flex flex-wrap items-center gap-6 mb-6 pb-5 border-b border-[#2a2a2a]">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${allClear ? 'bg-[#00ff88] animate-pulse' : 'bg-red-400 animate-pulse'}`} />
+            <span className={`font-mono text-sm font-bold ${allClear ? 'text-[#00ff88]' : 'text-red-400'}`}>
+              {allClear ? 'All agents nominal' : `${compromised.length} agent${compromised.length > 1 ? 's' : ''} flagged`}
+            </span>
+          </div>
+          <span className="text-[#555] text-xs font-mono">{assessments.length} agents monitored</span>
+          <span className="text-[#555] text-xs font-mono">3 integrity checks</span>
+          <span className="text-[#555] text-xs font-mono">avg hallucination risk: {avgRisk}%</span>
+        </div>
+
+        {/* Per-agent rows */}
+        <div className="space-y-0">
+          {assessments.map((a, i) => {
+            const healthy = a.verdict === 'healthy'
+            const risk = a.hallucination_risk ?? 0
+            const riskColor = risk < 30 ? 'bg-[#00ff88]' : risk < 60 ? 'bg-yellow-400' : 'bg-red-400'
+
+            return (
+              <div
+                key={a.agent}
+                className={`flex items-center justify-between py-3 ${i < assessments.length - 1 ? 'border-b border-[#1a1a1a]' : ''}`}
+              >
+                {/* Left: dot + name */}
+                <div className="flex items-center gap-3 w-36">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${healthy ? 'bg-[#00ff88]' : 'bg-red-400'}`} />
+                  <span className="text-white font-mono text-sm">{a.agent}</span>
+                </div>
+
+                {/* Middle: verdict badge */}
+                <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded w-24 text-center ${
+                  healthy
+                    ? 'bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20'
+                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                }`}>
+                  {a.verdict.toUpperCase()}
+                </span>
+
+                {/* Right: risk bar + flags */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#555] text-xs font-mono w-16 text-right">risk {risk}%</span>
+                    <div className="w-24 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${riskColor}`} style={{ width: `${risk}%` }} />
+                    </div>
+                  </div>
+                  {a.injection_detected && (
+                    <span className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded">
+                      INJECTION DETECTED
+                    </span>
+                  )}
+                  {a.out_of_scope && (
+                    <span className="text-xs font-mono text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded">
+                      OUT OF SCOPE
+                    </span>
+                  )}
+                  {!a.injection_detected && !a.out_of_scope && (
+                    <span className="text-xs font-mono text-[#555]">no flags</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function IncidentPage() {
   const router = useRouter()
   const params = useParams()
@@ -220,6 +314,9 @@ ${report.agentDebateSummary}
             <IncidentReport report={incident.report || {}} />
           </section>
         </div>
+
+        {/* MetaAgent Security Audit */}
+        <MetaAuditPanel assessments={incident.meta_assessments || []} />
       </main>
     </div>
   )
