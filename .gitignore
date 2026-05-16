@@ -43,4 +43,5 @@ venv/
 # Stratus Red Team binaries
 stratus
 stratus-red-team_*
-*.tar.gz
+*.tar.gzstratus
+stratus-red-team_Darwin_arm64.tar.gz
