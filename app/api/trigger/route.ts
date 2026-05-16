@@ -1,30 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin, seedAgentBenchmarks } from '@/lib/supabaseAdmin'
 import { runInvestigation } from '@/lib/orchestrator'
-import path from 'path'
-import fs from 'fs'
+import { detonateAttack, randomTechnique, TECHNIQUES } from '@/lib/stratus'
 
 export const maxDuration = 120
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
-    const userId = body.userId || 'anonymous'
+    const userId = (body.userId as string) || 'anonymous'
+    const requestedTechnique = body.technique as string | undefined
 
-    const dataPath = path.join(process.cwd(), 'data', 'cloudtrail-demo.json')
-    const cloudtrailEvents = JSON.parse(fs.readFileSync(dataPath, 'utf-8'))
+    // Pick technique: explicit > random
+    const techniqueId = requestedTechnique ?? randomTechnique()
+    const techniqueInfo = TECHNIQUES.find((t) => t.id === techniqueId)
 
-    // Seed benchmarks if needed
+    const cloudtrailEvents = detonateAttack(techniqueId)
+
     await seedAgentBenchmarks()
 
-    // Create incident using actual schema columns
     const { data: incident, error: createError } = await supabaseAdmin
       .from('incidents')
       .insert({
-        summary: `AWS Credential Compromise — ${new Date().toISOString().slice(0, 10)}`,
-        severity: 'CRITICAL',
+        summary: techniqueInfo
+          ? `${techniqueInfo.name} — ${new Date().toISOString().slice(0, 10)}`
+          : `AWS Attack Simulation — ${new Date().toISOString().slice(0, 10)}`,
+        severity: techniqueInfo?.severity ?? 'CRITICAL',
         status: 'investigating',
-        attack_type: 'credential-theft',
+        attack_type: techniqueId,
         triggered_by: userId,
       })
       .select()
@@ -39,6 +42,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       incidentId: incident.id,
       status: 'complete',
+      technique: techniqueId,
+      techniqueInfo,
       report,
       agentConversation: conversation,
       attackTimeline,

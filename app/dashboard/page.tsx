@@ -15,6 +15,59 @@ interface Incident {
 
 const AGENTS = ['Detective', 'Forensics', 'Remediation', 'Validator', 'Reporter', 'MetaAgent']
 
+const ATTACK_SCENARIOS = [
+  {
+    id: 'aws.privilege-escalation.iam-create-admin-user',
+    name: 'Privilege Escalation',
+    subtitle: 'IAM Create Admin User',
+    description: 'Compromised dev key escalates to AdministratorAccess, then exfiltrates S3 data and plants a backdoor',
+    severity: 'CRITICAL',
+    tactic: 'Privilege Escalation + Exfiltration',
+    mitre: 'T1078.004',
+    icon: '⬆',
+  },
+  {
+    id: 'aws.exfiltration.s3-backdoor-bucket-policy',
+    name: 'S3 Data Exfiltration',
+    subtitle: 'Bucket Policy Backdoor',
+    description: 'Attacker modifies S3 bucket policy to grant an external AWS account read access, exfiltrating HR and finance data',
+    severity: 'CRITICAL',
+    tactic: 'Exfiltration',
+    mitre: 'T1530',
+    icon: '⬇',
+  },
+  {
+    id: 'aws.defense-evasion.cloudtrail-stop',
+    name: 'Defense Evasion',
+    subtitle: 'Stop CloudTrail Logging',
+    description: 'Escalates privileges then stops audit logging. DeleteTrail attempt is blocked by SCP — attacker is caught',
+    severity: 'HIGH',
+    tactic: 'Defense Evasion',
+    mitre: 'T1562.008',
+    icon: '⊘',
+  },
+  {
+    id: 'aws.credential-access.iam-backdoor-user',
+    name: 'Persistence Backdoor',
+    subtitle: 'Hidden IAM User',
+    description: 'Creates a hidden IAM service account with S3 access and generates long-term credentials for persistent access',
+    severity: 'HIGH',
+    tactic: 'Persistence',
+    mitre: 'T1136.003',
+    icon: '⟳',
+  },
+  {
+    id: 'aws.lateral-movement.ec2-share-ami',
+    name: 'Lateral Movement',
+    subtitle: 'Share AMI Externally',
+    description: 'Shares a private AMI and EBS snapshot with an external AWS account, enabling that account to launch copies of internal infrastructure',
+    severity: 'MEDIUM',
+    tactic: 'Lateral Movement',
+    mitre: 'T1578',
+    icon: '→',
+  },
+]
+
 const severityColors: Record<string, string> = {
   CRITICAL: 'bg-red-500/20 text-red-400 border border-red-500',
   HIGH: 'bg-orange-500/20 text-orange-400 border border-orange-500',
@@ -22,11 +75,18 @@ const severityColors: Record<string, string> = {
   LOW: 'bg-green-500/20 text-green-400 border border-green-500',
 }
 
+const severityGlow: Record<string, string> = {
+  CRITICAL: 'hover:border-red-500/60 hover:shadow-red-500/10',
+  HIGH: 'hover:border-orange-500/60 hover:shadow-orange-500/10',
+  MEDIUM: 'hover:border-yellow-500/60 hover:shadow-yellow-500/10',
+  LOW: 'hover:border-green-500/60 hover:shadow-green-500/10',
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [incidents, setIncidents] = useState<Incident[]>([])
-  const [triggering, setTriggering] = useState(false)
+  const [triggering, setTriggering] = useState<string | null>(null)
   const [agentStates, setAgentStates] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
 
@@ -56,30 +116,23 @@ export default function DashboardPage() {
     router.push('/auth/signin')
   }
 
-  async function handleTrigger() {
+  async function handleTrigger(techniqueId: string) {
     setError('')
-    setTriggering(true)
+    setTriggering(techniqueId)
 
     const initialStates: Record<string, string> = {}
     AGENTS.forEach((a) => (initialStates[a] = 'idle'))
     setAgentStates(initialStates)
 
-    // Animate agents sequentially
-    const animateAgents = () => {
-      let agentIdx = 0
-      const interval = setInterval(() => {
-        if (agentIdx < AGENTS.length) {
-          const agent = AGENTS[agentIdx]
-          setAgentStates((prev) => ({ ...prev, [agent]: 'investigating' }))
-          agentIdx++
-        } else {
-          clearInterval(interval)
-        }
-      }, 4000)
-      return interval
-    }
-
-    const animInterval = animateAgents()
+    let agentIdx = 0
+    const animInterval = setInterval(() => {
+      if (agentIdx < AGENTS.length) {
+        setAgentStates((prev) => ({ ...prev, [AGENTS[agentIdx]]: 'investigating' }))
+        agentIdx++
+      } else {
+        clearInterval(animInterval)
+      }
+    }, 4000)
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -88,7 +141,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: session.user.id }),
+        body: JSON.stringify({ userId: session.user.id, technique: techniqueId }),
       })
 
       clearInterval(animInterval)
@@ -99,19 +152,14 @@ export default function DashboardPage() {
       }
 
       const data = await res.json()
-
       AGENTS.forEach((a) => setAgentStates((prev) => ({ ...prev, [a]: 'healthy' })))
-
       await fetchIncidents(session.access_token)
-
-      setTimeout(() => {
-        router.push(`/incident/${data.incidentId}`)
-      }, 800)
+      setTimeout(() => router.push(`/incident/${data.incidentId}`), 800)
     } catch (err: any) {
       clearInterval(animInterval)
       setError(err.message || 'Investigation failed')
       AGENTS.forEach((a) => setAgentStates((prev) => ({ ...prev, [a]: 'idle' })))
-      setTriggering(false)
+      setTriggering(null)
     }
   }
 
@@ -151,51 +199,89 @@ export default function DashboardPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-10">
-        {/* Hero */}
-        <div className="text-center mb-12">
+        {/* Header */}
+        <div className="mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold mb-4">
             AWS Incident Response<br />
             <span className="text-[#00ff88]">Powered by Autonomous AI Agents</span>
           </h1>
-          <p className="text-[#888888] text-sm max-w-xl mx-auto mb-8">
-            Six specialized AI agents investigate your CloudTrail logs in parallel, identify threats,
-            and generate actionable remediation reports — in under 2 minutes.
+          <p className="text-[#888888] text-sm max-w-xl">
+            Select an attack scenario to detonate. Six AI agents investigate in parallel and generate a full incident report in under 2 minutes.
           </p>
-
-          {!triggering ? (
-            <button
-              onClick={handleTrigger}
-              className="px-8 py-4 bg-[#00ff88] text-black font-bold text-lg rounded-lg hover:bg-[#00cc66] transition-colors shadow-lg shadow-[#00ff88]/20"
-            >
-              🚨 Trigger Demo Incident
-            </button>
-          ) : (
-            <div className="inline-flex flex-col items-center gap-4">
-              <div className="text-[#00ff88] font-mono text-sm animate-pulse">
-                Investigation in progress...
-              </div>
-
-              {/* Agent status indicators */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {AGENTS.map((agent) => (
-                  <div
-                    key={agent}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2a2a2a] bg-[#111111]"
-                  >
-                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getDotStyle(agentStates[agent] || 'idle')}`} />
-                    <span className="text-white text-xs font-mono">{agent}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-4 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm inline-block">
-              {error}
-            </div>
-          )}
         </div>
+
+        {/* Attack Scenario Selector / Running state */}
+        {!triggering ? (
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-white font-mono text-sm font-bold">SIMULATED ATTACK SCENARIOS</span>
+              <span className="text-[#444] text-xs font-mono">— stratus-red-team techniques</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ATTACK_SCENARIOS.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  onClick={() => handleTrigger(scenario.id)}
+                  className={`text-left p-5 rounded-lg border border-[#2a2a2a] bg-[#111111] transition-all hover:shadow-lg ${severityGlow[scenario.severity]} group`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[#888] font-mono text-lg">{scenario.icon}</span>
+                        <span className="text-white font-bold text-sm">{scenario.name}</span>
+                      </div>
+                      <span className="text-[#555] font-mono text-xs">{scenario.subtitle}</span>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded text-xs font-bold font-mono ${severityColors[scenario.severity]}`}>
+                      {scenario.severity}
+                    </span>
+                  </div>
+
+                  <p className="text-[#888888] text-xs leading-relaxed mb-4">
+                    {scenario.description}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#444] font-mono text-xs">{scenario.mitre}</span>
+                      <span className="text-[#333] text-xs">·</span>
+                      <span className="text-[#444] font-mono text-xs">{scenario.tactic}</span>
+                    </div>
+                    <span className="text-[#00ff88] text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                      Detonate →
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-12 rounded-lg border border-[#2a2a2a] bg-[#111111] p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
+              <span className="text-[#00ff88] font-mono text-sm">
+                Investigating: {ATTACK_SCENARIOS.find(s => s.id === triggering)?.name ?? triggering}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {AGENTS.map((agent) => (
+                <div
+                  key={agent}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a]"
+                >
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getDotStyle(agentStates[agent] || 'idle')}`} />
+                  <span className="text-white text-xs font-mono">{agent}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Incident Feed */}
         <div>
@@ -205,8 +291,8 @@ export default function DashboardPage() {
           </h2>
 
           {incidents.length === 0 ? (
-            <div className="rounded-lg border border-[#2a2a2a] bg-[#111111] p-8 text-center text-[#888888]">
-              No incidents yet. Click &quot;Trigger Demo Incident&quot; to start your first investigation.
+            <div className="rounded-lg border border-[#2a2a2a] bg-[#111111] p-8 text-center text-[#888888] text-sm">
+              No incidents yet. Select an attack scenario above to start your first investigation.
             </div>
           ) : (
             <div className="space-y-3">
@@ -218,13 +304,13 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono ${severityColors[incident.severity] || 'bg-gray-500/20 text-gray-400 border border-gray-500'}`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono ${severityColors[incident.severity] ?? 'bg-gray-500/20 text-gray-400 border border-gray-500'}`}>
                         {incident.severity}
                       </span>
                       <span className="text-white font-medium">{incident.title}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className={`text-xs font-mono px-2 py-0.5 rounded ${incident.status === 'resolved' ? 'text-green-400' : 'text-yellow-400'}`}>
+                      <span className={`text-xs font-mono px-2 py-0.5 rounded ${incident.status === 'resolved' ? 'text-[#00ff88]' : 'text-yellow-400'}`}>
                         {incident.status}
                       </span>
                       <span className="text-[#888888] text-xs">
