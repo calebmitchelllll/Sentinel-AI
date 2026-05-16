@@ -117,25 +117,31 @@ export async function invokeAgent(
   return msg;
 }
 
+// Keep only the most recent N messages from history to avoid context overflow on large models
+const HISTORY_WINDOW = 8;
+
 function buildContextMessages(context: InvestigationContext): Message[] {
   const msgs: Message[] = [];
 
   if (context.cloudTrailLogs.length > 0) {
-    // Strip internal _comment keys before sending to the model
     const cleanLogs = context.cloudTrailLogs.map(({ _comment: _, ...rest }) => rest);
     msgs.push({
       role: "user",
-      content: `INCIDENT ID: ${context.incidentId}\n\nAWS CloudTrail Logs (${cleanLogs.length} events):\n${JSON.stringify(cleanLogs, null, 2)}`,
+      // Compact JSON — pretty-print wastes ~30% of tokens
+      content: `INCIDENT ID: ${context.incidentId}\n\nAWS CloudTrail Logs (${cleanLogs.length} events):\n${JSON.stringify(cleanLogs)}`,
     });
   }
 
   if (context.conversationHistory.length > 0) {
-    const history = context.conversationHistory
+    const recent = context.conversationHistory.slice(-HISTORY_WINDOW);
+    const skipped = context.conversationHistory.length - recent.length;
+    const header = skipped > 0 ? `[${skipped} earlier messages omitted]\n\n` : "";
+    const history = recent
       .map((m) => `[${m.agentName.toUpperCase()} — ${m.type}]\n${m.content}`)
       .join("\n\n---\n\n");
     msgs.push({
       role: "user",
-      content: `AGENT INVESTIGATION HISTORY:\n${history}`,
+      content: `AGENT INVESTIGATION HISTORY:\n${header}${history}`,
     });
   }
 

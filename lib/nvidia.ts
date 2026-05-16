@@ -4,17 +4,22 @@ export async function callNemotron(messages: any[], temperature = 0.2) {
   }
 
   const baseUrl = process.env.NEMOTRON_BASE_URL;
-  const apiKey = process.env.NVIDIA_API_KEY;
+  // API key is optional for local vLLM/NIM instances — falls back to "local"
+  const apiKey = process.env.NVIDIA_API_KEY ?? "local";
   const model = process.env.NEMOTRON_MODEL;
 
-  if (!baseUrl || !apiKey || !model) {
+  if (!baseUrl || !model) {
     throw new Error(
-      `Missing NIM config — set NEMOTRON_BASE_URL, NVIDIA_API_KEY, and NEMOTRON_MODEL in .env.local`
+      `Missing config — set NEMOTRON_BASE_URL and NEMOTRON_MODEL in .env.local`
     );
   }
 
+  // Local GPU inference can be slower than cloud; allow up to 3 minutes per call
+  const timeoutMs = process.env.NEMOTRON_TIMEOUT_MS
+    ? parseInt(process.env.NEMOTRON_TIMEOUT_MS)
+    : 180_000;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000); // 90s per call
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   let response: Response;
   try {
@@ -34,7 +39,7 @@ export async function callNemotron(messages: any[], temperature = 0.2) {
     });
   } catch (err: any) {
     if (err?.name === "AbortError") {
-      throw new Error(`NIM call timed out after 90s (model: ${model})`);
+      throw new Error(`Model call timed out after ${timeoutMs / 1000}s (model: ${model})`);
     }
     throw err;
   } finally {
