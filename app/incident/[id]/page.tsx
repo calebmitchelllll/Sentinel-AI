@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import AgentChat from '@/components/AgentChat'
 import AttackTimeline from '@/components/AttackTimeline'
 import IncidentReport from '@/components/IncidentReport'
 
@@ -46,20 +45,6 @@ export default function IncidentPage() {
     load()
   }, [id, router])
 
-  function exportMarkdown() {
-    if (!incident?.report) return
-    const { format_markdown_client } = require('@/lib/agents/reporter')
-    const content = `# Security Incident Report\n\n**Severity:** ${incident.report.severityScore}\n**Date:** ${incident.created_at}\n\n## Executive Summary\n${incident.report.executiveSummary}\n\n## Root Cause\n${incident.report.rootCause}\n\n## Blast Radius\n${incident.report.blastRadius}\n\n## Immediate Actions\n${(incident.report.immediateActions || []).map((a: string) => `- [ ] ${a}`).join('\n')}\n\n## Long-Term Hardening\n${(incident.report.longtermActions || []).map((a: string) => `- [ ] ${a}`).join('\n')}`
-
-    const blob = new Blob([content], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `incident-${id.slice(0, 8)}.md`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   function exportPDF() {
     if (!incident?.report) return
     import('jspdf').then(({ jsPDF }) => {
@@ -80,7 +65,6 @@ export default function IncidentPage() {
         y += lines.length * (size * 0.45) + 4
       }
 
-      // Header
       doc.setFillColor(10, 10, 10)
       doc.rect(0, 0, 210, 297, 'F')
 
@@ -123,7 +107,7 @@ export default function IncidentPage() {
     })
   }
 
-  function exportMarkdownSimple() {
+  function exportMarkdown() {
     if (!incident?.report) return
     const report = incident.report
     const timeline: any[] = incident.attack_timeline || []
@@ -183,7 +167,6 @@ ${report.agentDebateSummary}
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Nav */}
       <nav className="border-b border-[#2a2a2a] bg-[#111111] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -201,7 +184,7 @@ ${report.agentDebateSummary}
               Export PDF
             </button>
             <button
-              onClick={exportMarkdownSimple}
+              onClick={exportMarkdown}
               className="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-white text-xs hover:border-[#00ff88] transition-colors"
             >
               Export Markdown
@@ -211,7 +194,6 @@ ${report.agentDebateSummary}
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Header */}
         <div className="flex items-start gap-4 flex-wrap">
           <span className={`px-3 py-1 rounded-full text-sm font-bold font-mono ${severityColors[severity] || 'bg-gray-500/20 text-gray-400 border border-gray-500'}`}>
             {severity}
@@ -222,7 +204,6 @@ ${report.agentDebateSummary}
           </div>
         </div>
 
-        {/* Top section: Attack Timeline + Incident Report side by side */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <section>
             <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
@@ -240,14 +221,6 @@ ${report.agentDebateSummary}
             <IncidentReport report={incident.report || {}} />
           </section>
         </div>
-
-        {/* Agent Thought History */}
-        <section>
-          <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
-            Agent Thought History ({(incident.agent_conversation || []).length} messages)
-          </h2>
-          <AgentChat conversation={incident.agent_conversation || []} />
-        </section>
       </main>
     </div>
   )
