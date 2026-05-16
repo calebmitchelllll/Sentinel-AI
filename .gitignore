@@ -38,3 +38,6 @@ next-env.d.ts
 
 # claude
 .claude/
+cloudtrail-logs/
+data/cloudtrail-real.json
+services/__pycache__/
