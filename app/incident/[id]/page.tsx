@@ -4,6 +4,8 @@ import { requireSession, createSupabaseServerClient } from "@/lib/supabase-serve
 import AgentChat from "@/components/AgentChat";
 import IncidentReport from "@/components/IncidentReport";
 import SeverityBadge from "@/components/SeverityBadge";
+import SimulatedAttackBadge from "@/components/SimulatedAttackBadge";
+import SimulationTimeline from "@/components/SimulationTimeline";
 import type { Incident, IncidentReport as Report } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -39,12 +41,19 @@ export default async function IncidentPage({ params }: { params: { id: string } 
           <h1 className="text-2xl font-bold mt-1">Incident {i.id.slice(0, 8)}</h1>
           <div className="mt-2 flex items-center gap-3 flex-wrap">
             <SeverityBadge severity={i.severity} />
+            <SimulatedAttackBadge />
             <span className="text-xs font-mono text-ink-faint">{new Date(i.created_at).toLocaleString()}</span>
             <StatusPill status={i.status} />
           </div>
           {i.summary && <p className="text-ink-dim text-sm mt-2 max-w-3xl">{i.summary}</p>}
         </div>
       </div>
+
+      <SimulationTimeline
+        incidentId={i.id}
+        incidentCreatedAt={i.created_at}
+        reportCreatedAt={r?.created_at ?? null}
+      />
 
       {!r && (
         <section>

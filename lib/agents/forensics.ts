@@ -140,10 +140,7 @@ export function createForensicsAgent(): OpenClawAgent {
     systemPrompt: SYSTEM_PROMPT,
     tools: [analyzeIamTool, traceCredentialTool, assessExposureTool],
 
-    async process(
-      context: InvestigationContext,
-      onToken?: (t: string) => void
-    ): Promise<AgentMessage> {
+    async process(context: InvestigationContext): Promise<AgentMessage> {
       updateAgentStatus("forensics", "investigating");
 
       const msg = await invokeAgent(
@@ -155,8 +152,7 @@ export function createForensicsAgent(): OpenClawAgent {
             content:
               "The Detective Agent has completed initial analysis (see history). Now perform deep forensic analysis: determine root cause, trace credential abuse, catalog data exfiltration, and assess blast radius. Return JSON.",
           },
-        ],
-        onToken
+        ]
       );
 
       msg.type = "analysis";

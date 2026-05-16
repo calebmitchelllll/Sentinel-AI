@@ -11,22 +11,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { runInvestigation } from "@/lib/agentOrchestrator";
 import { getAllAgentHealth } from "@/lib/openclaw";
 import { CloudTrailLogs } from "@/lib/agents/types";
+import demoLogs from "@/data/cloudtrail-demo.json";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
 
-    if (!body.logs || !body.logs.Records) {
-      return NextResponse.json(
-        { error: "Request body must include a CloudTrail logs object with a Records array" },
-        { status: 400 }
-      );
-    }
+    // Fall back to demo logs if none supplied — all demo incidents use this dataset
+    const logs: CloudTrailLogs =
+      body.logs?.Records ? (body.logs as CloudTrailLogs) : (demoLogs as unknown as CloudTrailLogs);
 
-    const logs = body.logs as CloudTrailLogs;
     const persist = body.persist === true;
 
     const result = await runInvestigation(logs, { persist });

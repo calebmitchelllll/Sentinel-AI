@@ -38,35 +38,67 @@ export async function saveIncidentToSupabase(
 ): Promise<void> {
   const db = getClient();
 
+  const severityTitle = (s: string | undefined) =>
+    s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "Critical";
+
+  // Matches actual DB schema: id, created_at, severity, status, summary, attack_type, triggered_by(uuid)
   const { error: incidentErr } = await db.from("incidents").upsert({
     id: incidentId,
-    severity: report.severity,
-    severity_score: report.severityScore,
-    report_json: report,
-    duration_ms: durationMs,
-    tags: report.tags,
-    created_at: report.generatedAt,
+    created_at: report.generatedAt ?? new Date().toISOString(),
+    severity: severityTitle(report.severity),
+    status: "resolved",
+    summary: report.executiveSummary?.slice(0, 280) ?? null,
+    attack_type: report.tags?.[0] ?? null,
+    // triggered_by is a UUID FK to auth.users — omit so it stays null
   });
 
   if (incidentErr) throw incidentErr;
 
-  // Batch-insert all messages
+  // Batch-insert all messages — columns: id, incident_id, agent_name, role, content, timestamp, is_challenge, is_flagged
   const rows = messages.map((m) => ({
     id: m.id,
     incident_id: incidentId,
-    agent_id: m.agentId,
     agent_name: m.agentName,
-    agent_color: m.agentColor,
-    type: m.type,
+    role: m.type,
     content: m.content,
-    target_agent_id: m.targetAgentId ?? null,
-    severity: m.severity ?? null,
-    metadata: m.metadata ?? null,
     timestamp: m.timestamp,
+    is_challenge: m.type === "challenge",
+    is_flagged: false,
   }));
 
   const { error: msgErr } = await db.from("agent_messages").insert(rows);
   if (msgErr) throw msgErr;
+}
+
+export async function saveIncidentReport(
+  incidentId: string,
+  report: IncidentReport,
+  reportMarkdown: string
+): Promise<void> {
+  const db = getClient();
+  const severityTitle = (s: string | undefined) =>
+    s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "Critical";
+
+  const { error } = await db.from("incident_reports").insert({
+    incident_id: incidentId,
+    severity: severityTitle(report.severity),
+    report_markdown: reportMarkdown,
+    root_cause: report.rootCause ?? "See executive summary",
+    blast_radius: report.blastRadius ?? "Under investigation",
+    timeline: (report.attackTimeline ?? []).map((e) => ({
+      at: e.timestamp,
+      event: `${e.event} — ${e.actor}`,
+    })),
+    immediate_fixes: report.immediateActions ?? [],
+    longterm_fixes: report.longTermActions ?? [],
+    agent_debate: (report.agentDebateSummary ?? []).map((d) => ({
+      agent: "Detective",
+      role: d.topic,
+      content: d.resolution,
+    })),
+  });
+
+  if (error) throw error;
 }
 
 export async function saveAgentMessage(
@@ -77,15 +109,12 @@ export async function saveAgentMessage(
   await db.from("agent_messages").insert({
     id: msg.id,
     incident_id: incidentId,
-    agent_id: msg.agentId,
     agent_name: msg.agentName,
-    agent_color: msg.agentColor,
-    type: msg.type,
+    role: msg.type,
     content: msg.content,
-    target_agent_id: msg.targetAgentId ?? null,
-    severity: msg.severity ?? null,
-    metadata: msg.metadata ?? null,
     timestamp: msg.timestamp,
+    is_challenge: msg.type === "challenge",
+    is_flagged: false,
   });
 }
 
@@ -157,14 +186,17 @@ export async function getLatestAgentBenchmarks() {
 export async function appendLivingDoc(
   incidentId: string,
   markdownContent: string,
-  tags: string[]
+  tags: string[],
+  extra?: { title?: string; severity?: string; attack_type?: string }
 ): Promise<void> {
   const db = getClient();
   const { error } = await db.from("living_docs").insert({
     incident_id: incidentId,
-    content_md: markdownContent,
+    content_markdown: markdownContent,
     tags,
-    created_at: new Date().toISOString(),
+    title: extra?.title ?? `Incident ${incidentId}`,
+    severity: extra?.severity ?? null,
+    attack_type: extra?.attack_type ?? null,
   });
   if (error) throw error;
 }

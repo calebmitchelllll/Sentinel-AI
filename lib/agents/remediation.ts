@@ -130,10 +130,7 @@ export function createRemediationAgent(): OpenClawAgent {
     systemPrompt: SYSTEM_PROMPT,
     tools: [suggestImmediateTool, suggestLongTermTool, validateRemediationTool],
 
-    async process(
-      context: InvestigationContext,
-      onToken?: (t: string) => void
-    ): Promise<AgentMessage> {
+    async process(context: InvestigationContext): Promise<AgentMessage> {
       updateAgentStatus("remediation", "investigating");
 
       const msg = await invokeAgent(
@@ -145,8 +142,7 @@ export function createRemediationAgent(): OpenClawAgent {
             content:
               "The investigation is complete and findings have been validated (see conversation history). Now generate a complete remediation plan — immediate actions with AWS CLI commands and long-term structural fixes. Return JSON.",
           },
-        ],
-        onToken
+        ]
       );
 
       msg.type = "analysis";

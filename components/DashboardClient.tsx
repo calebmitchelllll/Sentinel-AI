@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase-client";
 import { AGENT_COLORS, type AgentBenchmark, type Incident } from "@/lib/types";
 import SeverityBadge from "./SeverityBadge";
+import SimulatedAttackBadge from "./SimulatedAttackBadge";
 import TriggerIncidentButton from "./TriggerIncidentButton";
 
 export default function DashboardClient({
@@ -16,6 +17,27 @@ export default function DashboardClient({
 }) {
   const [incidents, setIncidents] = useState<Incident[]>(initialIncidents);
   const [benchmarks, setBenchmarks] = useState<AgentBenchmark[]>(initialBenchmarks);
+  const [simIds, setSimIds] = useState<Set<string>>(new Set());
+
+  // Read simulated-incident IDs that TriggerIncidentButton wrote to localStorage
+  useEffect(() => {
+    const ids = new Set<string>();
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith("sentinel_sim_")) {
+          ids.add(key.slice("sentinel_sim_".length));
+        }
+      }
+    } catch { /* localStorage unavailable */ }
+    setSimIds(ids);
+  }, []);
+
+  function isSimulated(incident: Incident): boolean {
+    if (simIds.has(incident.id)) return true;
+    const tb = incident.triggered_by?.toLowerCase() ?? "";
+    return tb.includes("stratus") || tb === "demo";
+  }
 
   useEffect(() => {
     const sb = createSupabaseBrowserClient();
@@ -72,9 +94,10 @@ export default function DashboardClient({
                     className="block bg-bg-panel border border-line rounded-lg p-4 hover:border-agent-detective/60 transition"
                   >
                     <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <StatusDot status={i.status} />
                         <SeverityBadge severity={i.severity} />
+                        {isSimulated(i) && <SimulatedAttackBadge size="sm" />}
                         <span className="font-mono text-xs text-ink-faint">{i.id.slice(0, 8)}</span>
                       </div>
                       <span className="text-[11px] font-mono text-ink-faint">

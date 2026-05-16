@@ -14,7 +14,12 @@ import {
   AgentStatus,
   InvestigationContext,
 } from "./agents/types";
-import { callNemotron, streamNemotron, Message } from "./openrouter";
+import { callNemotron } from "./nvidia";
+
+export interface Message {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
 
 // ─── Tool definition ──────────────────────────────────────────────────────────
 
@@ -39,10 +44,7 @@ export interface OpenClawAgent {
   color: string;
   systemPrompt: string;
   tools: OpenClawTool[];
-  process(
-    context: InvestigationContext,
-    onToken?: (token: string) => void
-  ): Promise<AgentMessage>;
+  process(context: InvestigationContext): Promise<AgentMessage>;
 }
 
 // ─── Agent registry ───────────────────────────────────────────────────────────
@@ -90,8 +92,7 @@ export async function broadcastMessage(msg: AgentMessage): Promise<void> {
 export async function invokeAgent(
   agent: OpenClawAgent,
   context: InvestigationContext,
-  extra: Message[] = [],
-  onToken?: (token: string) => void
+  extra: Message[] = []
 ): Promise<AgentMessage> {
   const messages: Message[] = [
     { role: "system", content: agent.systemPrompt },
@@ -99,9 +100,7 @@ export async function invokeAgent(
     ...extra,
   ];
 
-  const content = onToken
-    ? await streamNemotron({ messages, temperature: 0.2 }, onToken)
-    : await callNemotron({ messages, temperature: 0.2 });
+  const content = await callNemotron(messages, 0.2);
 
   const msg: AgentMessage = {
     id: crypto.randomUUID(),
@@ -111,7 +110,7 @@ export async function invokeAgent(
     content,
     timestamp: new Date().toISOString(),
     type: "analysis",
-    metadata: { model: "nvidia/llama-3.1-nemotron-70b-instruct" },
+    metadata: { model: process.env.NEMOTRON_MODEL ?? "nvidia/nemotron-70b-instruct-q8_0" },
   };
 
   await broadcastMessage(msg);

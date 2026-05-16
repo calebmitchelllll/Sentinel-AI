@@ -116,10 +116,7 @@ export function createReporterAgent(): OpenClawAgent {
     systemPrompt: SYSTEM_PROMPT,
     tools: [generateReportTool, formatMarkdownTool],
 
-    async process(
-      context: InvestigationContext,
-      onToken?: (t: string) => void
-    ): Promise<AgentMessage> {
+    async process(context: InvestigationContext): Promise<AgentMessage> {
       updateAgentStatus("reporter", "investigating");
 
       const msg = await invokeAgent(
@@ -130,8 +127,7 @@ export function createReporterAgent(): OpenClawAgent {
             role: "user",
             content: `All agents have completed their analysis (see conversation history above). The incident ID is ${context.incidentId}. Generate the complete structured incident report as JSON now.`,
           },
-        ],
-        onToken
+        ]
       );
 
       msg.type = "report";

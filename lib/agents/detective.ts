@@ -142,10 +142,7 @@ export function createDetectiveAgent(): OpenClawAgent {
     systemPrompt: SYSTEM_PROMPT,
     tools: [readLogsTool, flagAnomaliesTool, mapAttackPathTool],
 
-    async process(
-      context: InvestigationContext,
-      onToken?: (t: string) => void
-    ): Promise<AgentMessage> {
+    async process(context: InvestigationContext): Promise<AgentMessage> {
       updateAgentStatus("detective", "investigating");
 
       const msg = await invokeAgent(
@@ -157,8 +154,7 @@ export function createDetectiveAgent(): OpenClawAgent {
             content:
               "Analyze the CloudTrail logs above. Identify all anomalies, reconstruct the attack path, and return your findings as JSON.",
           },
-        ],
-        onToken
+        ]
       );
 
       msg.type = "analysis";

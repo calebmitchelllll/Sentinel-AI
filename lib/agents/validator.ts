@@ -118,10 +118,7 @@ export function createValidatorAgent(): OpenClawAgent {
     systemPrompt: SYSTEM_PROMPT,
     tools: [challengeFindingTool, requestEvidenceTool, confirmRejectTool],
 
-    async process(
-      context: InvestigationContext,
-      onToken?: (t: string) => void
-    ): Promise<AgentMessage> {
+    async process(context: InvestigationContext): Promise<AgentMessage> {
       updateAgentStatus("validator", "investigating");
 
       const lastMessage = context.conversationHistory[context.conversationHistory.length - 1];
@@ -137,8 +134,7 @@ export function createValidatorAgent(): OpenClawAgent {
             role: "user",
             content: `${targetLabel} Challenge the findings rigorously. Confirm what holds up, reject what doesn't, and flag what needs more evidence. Return JSON.`,
           },
-        ],
-        onToken
+        ]
       );
 
       msg.type = "challenge";

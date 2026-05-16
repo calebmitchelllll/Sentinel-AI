@@ -38,6 +38,7 @@ import {
 } from "./agents/types";
 import {
   saveIncidentToSupabase,
+  saveIncidentReport,
   saveAgentMessage,
   appendLivingDoc,
   saveAgentBenchmarks,
@@ -121,59 +122,83 @@ export async function runInvestigation(
     const meta        = agents.find((a) => a.id === "meta")!;
 
     // ── Phase 1: Detective analysis ──────────────────────────────────────────
+    console.log("[orchestrator] Phase 1: Detective");
     const detectiveMsg = await detective.process(context);
     await collect(detectiveMsg);
+    console.log("[orchestrator] Phase 1 done, content length:", detectiveMsg.content.length);
 
     // Meta monitors after Phase 1
+    console.log("[orchestrator] Meta check 1");
     await collect(await runMetaCheck(meta, context));
 
     // ── Phase 2: Forensics deep dive ─────────────────────────────────────────
+    console.log("[orchestrator] Phase 2: Forensics");
     const forensicsMsg = await forensics.process(context);
     await collect(forensicsMsg);
+    console.log("[orchestrator] Phase 2 done");
 
     // Meta monitors after Phase 2
+    console.log("[orchestrator] Meta check 2");
     await collect(await runMetaCheck(meta, context));
 
     // ── Phase 3: Validator challenges both ───────────────────────────────────
+    console.log("[orchestrator] Phase 3: Validator");
     const validationMsg = await validator.process(context);
     validationMsg.type = "challenge";
     await collect(validationMsg);
+    console.log("[orchestrator] Phase 3 done");
 
     // ── Phase 4: Rebuttal round ──────────────────────────────────────────────
+    console.log("[orchestrator] Phase 4: Rebuttals");
     const detectiveRebuttal = await runRebuttal(detective, context, validationMsg);
     await collect(detectiveRebuttal);
 
     const forensicsRebuttal = await runRebuttal(forensics, context, validationMsg);
     await collect(forensicsRebuttal);
+    console.log("[orchestrator] Phase 4 done");
 
     // Meta monitors after debate
+    console.log("[orchestrator] Meta check 3");
     await collect(await runMetaCheck(meta, context));
 
     // ── Phase 5: Remediation ─────────────────────────────────────────────────
+    console.log("[orchestrator] Phase 5: Remediation");
     const remediationMsg = await remediation.process(context);
     await collect(remediationMsg);
+    console.log("[orchestrator] Phase 5 done");
 
     // ── Phase 6: Validator validates remediation ──────────────────────────────
+    console.log("[orchestrator] Phase 6: Validator → Remediation");
     const remValMsg = await validator.process(context);
     remValMsg.type = "challenge";
     remValMsg.targetAgentId = "remediation";
     await collect(remValMsg);
+    console.log("[orchestrator] Phase 6 done");
 
     // ── Phase 7: Reporter synthesises everything ──────────────────────────────
+    console.log("[orchestrator] Phase 7: Reporter");
     const reportMsg = await reporter.process(context);
     reportMsg.type = "report";
     await collect(reportMsg);
+    console.log("[orchestrator] Phase 7 done, report length:", reportMsg.content.length);
 
     // Final meta check
+    console.log("[orchestrator] Final meta check");
     await collect(await runMetaCheck(meta, context));
+    console.log("[orchestrator] Pipeline complete");
 
     // ── Parse final report ────────────────────────────────────────────────────
     let report: IncidentReport | null = null;
     let reportMarkdown = "";
     try {
-      report = JSON.parse(extractJSON(reportMsg.content));
+      const extractedJson = extractJSON(reportMsg.content);
+      report = JSON.parse(extractedJson);
       report!.incidentId = incidentId;
-      reportMarkdown = reportToMarkdown(reportMsg.content, incidentId);
+      // Normalize severity to uppercase regardless of model output casing
+      if (report!.severity) {
+        report!.severity = (report!.severity as string).toUpperCase() as Severity;
+      }
+      reportMarkdown = reportToMarkdown(extractedJson, incidentId);
     } catch {
       reportMarkdown = `# Incident ${incidentId}\n\nReport parsing failed — raw agent output:\n\n${reportMsg.content}`;
     }
@@ -185,7 +210,12 @@ export async function runInvestigation(
     if (options.persist && report) {
       try {
         await saveIncidentToSupabase(incidentId, report, allMessages, Date.now() - startTime);
-        await appendLivingDoc(incidentId, reportMarkdown, report.tags ?? []);
+        await saveIncidentReport(incidentId, report, reportMarkdown);
+        await appendLivingDoc(incidentId, reportMarkdown, report.tags ?? [], {
+          title: report.executiveSummary?.slice(0, 120) ?? `Incident ${incidentId}`,
+          severity: report.severity,
+          attack_type: report.tags?.[0] ?? null,
+        });
         await saveAgentBenchmarks(agentStates);
       } catch (err) {
         console.error("Supabase persist error:", err);
