@@ -222,30 +222,31 @@ ${report.agentDebateSummary}
           </div>
         </div>
 
-        {/* Agent Conversation */}
+        {/* Top section: Attack Timeline + Incident Report side by side */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <section>
+            <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
+              Attack Timeline
+            </h2>
+            <div className="rounded-lg border border-[#2a2a2a] bg-[#111111] p-6 h-full">
+              <AttackTimeline timeline={incident.attack_timeline || []} />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
+              Incident Summary
+            </h2>
+            <IncidentReport report={incident.report || {}} />
+          </section>
+        </div>
+
+        {/* Agent Thought History */}
         <section>
           <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
-            Agent Conversation ({(incident.agent_conversation || []).length} messages)
+            Agent Thought History ({(incident.agent_conversation || []).length} messages)
           </h2>
           <AgentChat conversation={incident.agent_conversation || []} />
-        </section>
-
-        {/* Attack Timeline */}
-        <section>
-          <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
-            Attack Timeline
-          </h2>
-          <div className="rounded-lg border border-[#2a2a2a] bg-[#111111] p-6">
-            <AttackTimeline timeline={incident.attack_timeline || []} />
-          </div>
-        </section>
-
-        {/* Incident Report */}
-        <section>
-          <h2 className="text-[#00ff88] font-mono text-sm uppercase tracking-widest mb-4">
-            Incident Report
-          </h2>
-          <IncidentReport report={incident.report || {}} />
         </section>
       </main>
     </div>
