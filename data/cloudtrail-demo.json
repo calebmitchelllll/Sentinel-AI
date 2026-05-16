@@ -1,0 +1,495 @@
+[
+  {
+    "eventTime": "2024-01-15T09:01:12Z",
+    "eventName": "GetCallerIdentity",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": null,
+    "responseElements": {
+      "userId": "AIDACKCEVSQ6C2EXAMPLE",
+      "account": "123456789012",
+      "arn": "arn:aws:iam::123456789012:user/dev-john"
+    }
+  },
+  {
+    "eventTime": "2024-01-15T09:14:33Z",
+    "eventName": "DescribeInstances",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "filterSet": {}, "instancesSet": {} },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-15T10:22:07Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "builds/app-v2.3.zip" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-15T11:45:19Z",
+    "eventName": "GetMetricData",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "metricDataQueries": [{ "id": "cpu", "metricStat": { "metric": { "namespace": "AWS/EC2" } } }] },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-15T14:08:44Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-logs", "key": "app/2024-01-15.log" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-16T08:33:21Z",
+    "eventName": "GetCallerIdentity",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": null,
+    "responseElements": {
+      "userId": "AIDACKCEVSQ6C2EXAMPLE",
+      "account": "123456789012",
+      "arn": "arn:aws:iam::123456789012:user/dev-john"
+    }
+  },
+  {
+    "eventTime": "2024-01-16T09:12:55Z",
+    "eventName": "DescribeInstances",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "filterSet": { "items": [{ "name": "instance-state-name", "valueSet": { "items": [{ "value": "running" }] } }] } },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-16T11:07:38Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "configs/prod.yaml" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-16T13:44:02Z",
+    "eventName": "GetMetricData",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "metricDataQueries": [{ "id": "mem", "metricStat": { "metric": { "namespace": "CWAgent" } } }] },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-16T15:22:11Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-logs", "key": "app/2024-01-16.log" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-17T08:55:14Z",
+    "eventName": "GetCallerIdentity",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": null,
+    "responseElements": {
+      "userId": "AIDACKCEVSQ6C2EXAMPLE",
+      "account": "123456789012",
+      "arn": "arn:aws:iam::123456789012:user/dev-john"
+    }
+  },
+  {
+    "eventTime": "2024-01-17T10:11:29Z",
+    "eventName": "DescribeInstances",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": {},
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-17T12:04:53Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "builds/app-v2.4.zip" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-17T14:37:22Z",
+    "eventName": "GetMetricData",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "metricDataQueries": [] },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-17T16:01:07Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-logs", "key": "app/2024-01-17.log" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-17T17:22:44Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "docs/api-spec.yaml" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-18T09:03:51Z",
+    "eventName": "GetCallerIdentity",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": null,
+    "responseElements": {
+      "userId": "AIDACKCEVSQ6C2EXAMPLE",
+      "account": "123456789012",
+      "arn": "arn:aws:iam::123456789012:user/dev-john"
+    }
+  },
+  {
+    "eventTime": "2024-01-18T10:18:37Z",
+    "eventName": "DescribeInstances",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": {},
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-18T12:44:19Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "builds/app-v2.5.zip" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-18T15:09:08Z",
+    "eventName": "GetMetricData",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": {},
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-18T16:55:33Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-logs", "key": "app/2024-01-18.log" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-19T08:41:02Z",
+    "eventName": "GetCallerIdentity",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": null,
+    "responseElements": {
+      "userId": "AIDACKCEVSQ6C2EXAMPLE",
+      "account": "123456789012",
+      "arn": "arn:aws:iam::123456789012:user/dev-john"
+    }
+  },
+  {
+    "eventTime": "2024-01-19T09:57:14Z",
+    "eventName": "DescribeInstances",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": {},
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-19T11:22:48Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "configs/staging.yaml" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-19T13:08:59Z",
+    "eventName": "GetMetricData",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": {},
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-19T14:33:27Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-logs", "key": "app/2024-01-19.log" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-20T08:17:44Z",
+    "eventName": "GetCallerIdentity",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": null,
+    "responseElements": {
+      "userId": "AIDACKCEVSQ6C2EXAMPLE",
+      "account": "123456789012",
+      "arn": "arn:aws:iam::123456789012:user/dev-john"
+    }
+  },
+  {
+    "eventTime": "2024-01-20T09:34:11Z",
+    "eventName": "DescribeInstances",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": {},
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-20T11:48:52Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "builds/app-v2.6.zip" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-20T13:22:36Z",
+    "eventName": "GetMetricData",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": {},
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-20T15:11:03Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-logs", "key": "app/2024-01-20.log" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-20T16:44:18Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "203.0.113.42",
+    "requestParameters": { "bucketName": "dev-artifacts", "key": "scripts/deploy.sh" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-21T07:13:22Z",
+    "eventName": "GetCallerIdentity",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "185.220.101.47",
+    "requestParameters": null,
+    "responseElements": {
+      "userId": "AIDACKCEVSQ6C2EXAMPLE",
+      "account": "123456789012",
+      "arn": "arn:aws:iam::123456789012:user/dev-john"
+    }
+  },
+  {
+    "eventTime": "2024-01-21T07:14:05Z",
+    "eventName": "ListUsers",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "185.220.101.47",
+    "requestParameters": { "pathPrefix": "/" },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-21T07:15:33Z",
+    "eventName": "AttachUserPolicy",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "185.220.101.47",
+    "requestParameters": {
+      "userName": "dev-john",
+      "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
+    },
+    "responseElements": null
+  },
+  {
+    "eventTime": "2024-01-21T07:16:01Z",
+    "eventName": "ListBuckets",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "185.220.101.47",
+    "requestParameters": null,
+    "responseElements": {
+      "buckets": [
+        { "name": "dev-artifacts", "creationDate": "2023-03-01T00:00:00Z" },
+        { "name": "dev-logs", "creationDate": "2023-03-01T00:00:00Z" },
+        { "name": "corp-sensitive-data", "creationDate": "2022-11-15T00:00:00Z" }
+      ]
+    }
+  },
+  {
+    "eventTime": "2024-01-21T07:16:44Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "185.220.101.47",
+    "requestParameters": { "bucketName": "corp-sensitive-data", "key": "hr/employees.csv" },
+    "responseElements": { "x-amz-request-id": "EXAMPLE123456789", "x-amz-id-2": "EXAMPLE/EXAMPLE/EXAMPLE" }
+  },
+  {
+    "eventTime": "2024-01-21T07:17:02Z",
+    "eventName": "GetObject",
+    "userIdentity": {
+      "type": "IAMUser",
+      "arn": "arn:aws:iam::123456789012:user/dev-john",
+      "accessKeyId": "AKIAIOSFODNN7EXAMPLE"
+    },
+    "sourceIPAddress": "185.220.101.47",
+    "requestParameters": { "bucketName": "corp-sensitive-data", "key": "finance/payroll-q1.csv" },
+    "responseElements": { "x-amz-request-id": "EXAMPLE123456790", "x-amz-id-2": "EXAMPLE/EXAMPLE/EXAMPLE2" }
+  }
+]

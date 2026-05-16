@@ -1,0 +1,69 @@
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json ./
+RUN npm install --frozen-lockfile 2>/dev/null || npm install
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ARG NVIDIA_API_KEY=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
+ARG NEMOCLAW_API_KEY=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
+ARG NEMOTRON_BASE_URL=https://integrate.api.nvidia.com/v1
+ARG NEMOTRON_MODEL=nvidia/nemotron-3-nano-30b-a3b
+ARG NEXT_PUBLIC_SUPABASE_URL=https://rhvwzewjzcdkwdcnczky.supabase.co
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodnd6ZXdqemNka3dkY25jemt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NjcxNzcsImV4cCI6MjA5NDQ0MzE3N30.rw-_GsNDp94bUEZ9q0hILWxRyWeOQGUL4eO32jQYMcg
+ARG SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodnd6ZXdqemNka3dkY25jemt5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODg2NzE3NywiZXhwIjoyMDk0NDQzMTc3fQ.eLogD7LjC2Di_L6l_JFXt0tmdjYRqTQDDq0GNIQ3t9Q
+ARG NEXTAUTH_SECRET=lxOKmJGpTE69ggD95AqljK8n8imX8stuE4loxNTPPuw=
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEMOCLAW_SERVICE_URL=http://localhost:8000
+
+ENV NVIDIA_API_KEY=$NVIDIA_API_KEY
+ENV NEMOCLAW_API_KEY=$NEMOCLAW_API_KEY
+ENV NEMOTRON_BASE_URL=$NEMOTRON_BASE_URL
+ENV NEMOTRON_MODEL=$NEMOTRON_MODEL
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEMOCLAW_SERVICE_URL=$NEMOCLAW_SERVICE_URL
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+ENV NVIDIA_API_KEY=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
+ENV NEMOCLAW_API_KEY=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
+ENV NEMOTRON_BASE_URL=https://integrate.api.nvidia.com/v1
+ENV NEMOTRON_MODEL=nvidia/nemotron-3-nano-30b-a3b
+ENV NEXT_PUBLIC_SUPABASE_URL=https://rhvwzewjzcdkwdcnczky.supabase.co
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodnd6ZXdqemNka3dkY25jemt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NjcxNzcsImV4cCI6MjA5NDQ0MzE3N30.rw-_GsNDp94bUEZ9q0hILWxRyWeOQGUL4eO32jQYMcg
+ENV SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodnd6ZXdqemNka3dkY25jemt5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODg2NzE3NywiZXhwIjoyMDk0NDQzMTc3fQ.eLogD7LjC2Di_L6l_JFXt0tmdjYRqTQDDq0GNIQ3t9Q
+ENV NEXTAUTH_SECRET=lxOKmJGpTE69ggD95AqljK8n8imX8stuE4loxNTPPuw=
+ENV NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ENV NEMOCLAW_SERVICE_URL=http://localhost:8000
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/data ./data
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

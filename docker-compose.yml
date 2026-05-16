@@ -1,0 +1,19 @@
+services:
+  sentinelai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      - NVIDIA_API_KEY=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
+      - NEMOCLAW_API_KEY=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
+      - NEMOTRON_BASE_URL=https://integrate.api.nvidia.com/v1
+      - NEMOTRON_MODEL=nvidia/nemotron-3-nano-30b-a3b
+      - NEXT_PUBLIC_SUPABASE_URL=https://rhvwzewjzcdkwdcnczky.supabase.co
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodnd6ZXdqemNka3dkY25jemt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NjcxNzcsImV4cCI6MjA5NDQ0MzE3N30.rw-_GsNDp94bUEZ9q0hILWxRyWeOQGUL4eO32jQYMcg
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodnd6ZXdqemNka3dkY25jemt5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODg2NzE3NywiZXhwIjoyMDk0NDQzMTc3fQ.eLogD7LjC2Di_L6l_JFXt0tmdjYRqTQDDq0GNIQ3t9Q
+      - NEXTAUTH_SECRET=lxOKmJGpTE69ggD95AqljK8n8imX8stuE4loxNTPPuw=
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+      - NEMOCLAW_SERVICE_URL=http://localhost:8000
+    restart: unless-stopped
