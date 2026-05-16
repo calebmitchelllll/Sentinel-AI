@@ -200,7 +200,10 @@ export async function runInvestigation(
       }
       reportMarkdown = reportToMarkdown(extractedJson, incidentId);
     } catch {
-      reportMarkdown = `# Incident ${incidentId}\n\nReport parsing failed — raw agent output:\n\n${reportMsg.content}`;
+      // JSON parse failed — build a partial report from the markdown text so
+      // report is never null and Supabase persistence still fires.
+      report = _buildPartialReport(reportMsg.content, incidentId);
+      reportMarkdown = reportMsg.content || `# Incident ${incidentId}\n\nReport unavailable.`;
     }
 
     const agentStates = getAllAgentHealth();
@@ -257,7 +260,7 @@ async function runMetaCheck(
 async function runRebuttal(
   agent: ReturnType<typeof createDetectiveAgent | typeof createForensicsAgent>,
   context: InvestigationContext,
-  challengeMsg: AgentMessage
+  _challengeMsg: AgentMessage
 ): Promise<AgentMessage> {
   updateAgentStatus(agent.id, "investigating");
 
@@ -275,6 +278,59 @@ Return your response as plain text (not JSON). Be concise.`;
   msg.type = "rebuttal";
   msg.targetAgentId = "validator";
   return msg;
+}
+
+/** Extract the text body of a markdown section (everything until the next heading). */
+function _sectionAfter(text: string, heading: string): string {
+  const pat = new RegExp(`#+\\s*${heading}[\\s\\S]*?\\n+`, "i");
+  const idx = text.search(pat);
+  if (idx === -1) return "";
+  const after = text.slice(idx).replace(pat, "");
+  const next = after.search(/\n#+\s/);
+  return (next > 0 ? after.slice(0, next) : after).trim();
+}
+
+/** Extract bullet / numbered list items from a markdown block. */
+function _bullets(block: string): string[] {
+  return block
+    .split("\n")
+    .filter((l) => /^\s*[-*•]/.test(l) || /^\s*\d+\./.test(l))
+    .map((l) => l.replace(/^\s*[-*•]\s*/, "").replace(/^\s*\d+\.\s*/, "").trim())
+    .filter(Boolean);
+}
+
+/**
+ * Build a best-effort IncidentReport from plain markdown when JSON.parse fails.
+ * Ensures report is never null so Supabase persistence always fires and the
+ * incident page never 404s due to a missing DB row.
+ */
+function _buildPartialReport(text: string, incidentId: string): IncidentReport {
+  const sevMatch = text.match(/\b(CRITICAL|HIGH|MEDIUM|LOW)\b/i);
+  const sev = ((sevMatch?.[1] ?? "HIGH").toUpperCase()) as Severity;
+  const scoreMap: Record<string, number> = { CRITICAL: 10, HIGH: 8, MEDIUM: 5, LOW: 3 };
+
+  const executiveSummary =
+    _sectionAfter(text, "Executive Summary") || text.slice(0, 300).trim();
+  const rootCause = _sectionAfter(text, "Root Cause");
+  const blastRadius = _sectionAfter(text, "Blast Radius");
+  const immediateActions = _bullets(_sectionAfter(text, "Immediate(?:\\s+Actions|\\s+Fixes)?"));
+  const longTermActions = _bullets(_sectionAfter(text, "Long[\\s-]*Term(?:\\s+Actions|\\s+Fixes)?"));
+
+  return {
+    incidentId,
+    generatedAt: new Date().toISOString(),
+    severity: sev,
+    severityScore: scoreMap[sev] ?? 8,
+    executiveSummary,
+    attackTimeline: [],
+    rootCause,
+    blastRadius,
+    immediateActions,
+    longTermActions,
+    agentDebateSummary: [],
+    confidenceScore: 50,
+    tags: [],
+  };
 }
 
 /** Pull the first JSON object or array out of a string that may have surrounding text */

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { requireSession, createSupabaseServerClient } from "@/lib/supabase-server";
 import AgentChat from "@/components/AgentChat";
 import IncidentReport from "@/components/IncidentReport";
@@ -20,7 +19,26 @@ export default async function IncidentPage({ params }: { params: { id: string } 
     .eq("id", params.id)
     .single();
 
-  if (!incident) notFound();
+  if (!incident) {
+    return (
+      <div className="space-y-4">
+        <Link href="/dashboard" className="text-xs font-mono text-ink-dim hover:text-ink">
+          ← back to dashboard
+        </Link>
+        <div className="rounded border border-surface-1 bg-surface-0 p-6 mt-4">
+          <h1 className="text-xl font-bold mb-2">Investigation not found</h1>
+          <p className="text-ink-dim text-sm mb-4">
+            Incident <code className="font-mono text-ink">{params.id.slice(0, 8)}</code> is
+            not in the database. The investigation may have completed without persistence
+            enabled, or the ID is invalid.
+          </p>
+          <Link href="/dashboard" className="text-xs font-mono text-blue-400 hover:text-blue-300">
+            Start a new investigation →
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const { data: report } = await supabase
     .from("incident_reports")
@@ -30,6 +48,20 @@ export default async function IncidentPage({ params }: { params: { id: string } 
 
   const i = incident as Incident;
   const r = (report as Report) || null;
+
+  // Don't show raw JSON in the summary field — extract executiveSummary from it
+  // if the orchestrator accidentally saved the full JSON there.
+  const summaryText = (() => {
+    if (!i.summary) return null;
+    if (i.summary.trimStart().startsWith("{")) {
+      try {
+        return (JSON.parse(i.summary) as { executiveSummary?: string }).executiveSummary ?? null;
+      } catch {
+        return null;
+      }
+    }
+    return i.summary;
+  })();
 
   return (
     <div className="space-y-6">
@@ -45,7 +77,7 @@ export default async function IncidentPage({ params }: { params: { id: string } 
             <span className="text-xs font-mono text-ink-faint">{new Date(i.created_at).toLocaleString()}</span>
             <StatusPill status={i.status} />
           </div>
-          {i.summary && <p className="text-ink-dim text-sm mt-2 max-w-3xl">{i.summary}</p>}
+          {summaryText && <p className="text-ink-dim text-sm mt-2 max-w-3xl">{summaryText}</p>}
         </div>
       </div>
 

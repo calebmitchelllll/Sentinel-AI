@@ -6,11 +6,25 @@ Nemotron tool-calling.
 """
 from __future__ import annotations
 
+import json
+import re
 from typing import Any, Callable
 
 # Known indicators baked into the demo dataset. In production these would
 # come from threat-intel feeds (e.g. Tor exit lists, AbuseIPDB).
-KNOWN_TOR_EXITS = {"185.220.101.47", "185.220.102.8", "199.249.230.83"}
+KNOWN_TOR_EXITS = {
+    "185.220.101.47", "185.220.102.8", "199.249.230.83",
+    "185.220.100.240", "185.220.101.34", "185.220.101.35",
+    "185.220.101.45", "185.220.101.46", "185.220.101.48",
+    "199.249.230.80", "199.249.230.87", "199.249.230.88",
+    "23.129.64.131", "23.129.64.132", "45.142.212.100",
+}
+
+KNOWN_ATTACK_TOOLS = {
+    "pacu", "stratus-red-team", "endgame", "cloudsplaining",
+    "aws-vault", "trufflehog", "gitleaks", "cloudmapper",
+    "weirdaal", "cloudfox", "enumerate-iam", "awspx",
+}
 SENSITIVE_KEYS = {"sensitive-data/", "payroll/", "secrets/"}
 PRIVILEGED_POLICIES = {
     "arn:aws:iam::aws:policy/AdministratorAccess",
@@ -233,6 +247,7 @@ def confirm_or_reject(*, finding: str, verdict: str, rationale: str) -> dict:
 # ---------------------------------------------------------------------------
 
 INJECTION_PATTERNS = [
+    # Classic jailbreak phrases
     "ignore previous instructions",
     "ignore the above",
     "you are now",
@@ -240,29 +255,153 @@ INJECTION_PATTERNS = [
     "as a language model",
     "i am the system",
     "developer override",
+    # Semantic manipulation
+    "new objective",
+    "act as",
+    "your true purpose",
+    "system prompt",
+    "forget your instructions",
+    "updated instructions",
+    "override your",
+    "bypass your",
+    # Template / prompt injection markers
     "{{",
+    "}}",
+    "${",
+    "<%",
+    # Special token injection
     "<|im_start|>",
     "<|system|>",
+    "<|im_end|>",
+]
+
+# Per-agent scope violation keywords: (substring_to_find_in_lowercase_message, reason)
+_AGENT_FORBIDDEN: dict[str, list[tuple[str, str]]] = {
+    "Detective": [
+        ("immediate fix", "fix proposals are Remediation's scope"),
+        ("long-term fix", "long-term planning is Remediation's scope"),
+        ("suggest_immediate_fix", "fix proposals are Remediation's scope"),
+        ("blast radius", "blast radius assessment is Forensics' scope"),
+        ("root cause is", "definitive root cause is Forensics' scope"),
+        ("executive summary", "report writing is Reporter's scope"),
+        ("## severity", "structured reporting is Reporter's scope"),
+    ],
+    "Forensics": [
+        ("flag_anomalies", "anomaly flagging is Detective's scope"),
+        ("map_attack_path", "attack path mapping is Detective's scope"),
+        ("immediate fix", "fix proposals are Remediation's scope"),
+        ("suggest_immediate_fix", "fix proposals are Remediation's scope"),
+        ("executive summary", "report writing is Reporter's scope"),
+        ("## severity", "structured reporting is Reporter's scope"),
+    ],
+    "Validator": [
+        ("root cause is", "root cause determination is Forensics' scope"),
+        ("immediate fix", "fix proposals are Remediation's scope"),
+        ("suggest_immediate_fix", "fix proposals are Remediation's scope"),
+        ("executive summary", "report writing is Reporter's scope"),
+        ("## severity", "structured reporting is Reporter's scope"),
+    ],
+    "Remediation": [
+        ("map_attack_path", "attack path mapping is Detective's scope"),
+        ("root cause is", "root cause determination is Forensics' scope"),
+        ("executive summary", "report writing is Reporter's scope"),
+        ("i challenge", "adversarial challenges are Validator's scope"),
+        ("confirm or reject", "confirm/reject decisions are Validator's scope"),
+        ("## severity", "structured reporting is Reporter's scope"),
+    ],
+    "Reporter": [
+        ("i challenge", "adversarial challenges are Validator's scope"),
+        ("flag_anomalies", "anomaly flagging is Detective's scope"),
+        ("new finding:", "new investigative claims should come from Detective or Forensics"),
+        ("the attacker also", "new investigative claims should come from Detective or Forensics"),
+    ],
+}
+
+# Regex patterns for hallucination signal detection
+_HALLUCINATION_SIGNALS: list[tuple[re.Pattern, str]] = [
+    (re.compile(r"\bAKIA[A-Z0-9]{16}\b"), "access key ID"),
+    (re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), "IP address"),
+    (re.compile(r"\b20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\b"), "ISO timestamp"),
+    (re.compile(r"\b[\w-]+\.(?:csv|xlsx|json|zip|tar\.gz|pem|key)\b"), "filename"),
 ]
 
 
 def detect_prompt_injection(*, text: str) -> dict:
     lower = (text or "").lower()
-    hits = [p for p in INJECTION_PATTERNS if p in lower]
-    return {"text_snippet": (text or "")[:160], "matched": hits, "injection_detected": bool(hits)}
+    pattern_hits = [p for p in INJECTION_PATTERNS if p in lower]
+    tool_hits = [t for t in KNOWN_ATTACK_TOOLS if t in lower]
+    all_hits = pattern_hits + tool_hits
+    return {
+        "text_snippet": (text or "")[:160],
+        "matched_patterns": pattern_hits,
+        "matched_tools": tool_hits,
+        "matched": all_hits,
+        "injection_detected": bool(all_hits),
+    }
 
 
 def monitor_agent_behavior(*, agent_name: str, message: str, expected_role: str) -> dict:
     inj = detect_prompt_injection(text=message)
-    out_of_scope = False
-    # crude scope check: each agent's name should appear nowhere as a forbidden role takeover
-    if "i am the reporter" in (message or "").lower() and agent_name != "Reporter":
-        out_of_scope = True
+    lower_msg = (message or "").lower()
+
+    scope_violations: list[str] = []
+    for keyword, reason in _AGENT_FORBIDDEN.get(agent_name, []):
+        if keyword in lower_msg:
+            scope_violations.append(reason)
+
+    hallucination_signals: list[dict] = []
+    for pattern, label in _HALLUCINATION_SIGNALS:
+        matches = pattern.findall(message or "")
+        if matches:
+            hallucination_signals.append({
+                "type": label,
+                "values": sorted(set(matches))[:5],
+                "note": f"Agent claimed specific {label}(s) — verify each against tool results",
+            })
+
     return {
         "agent": agent_name,
+        "expected_role": expected_role,
         "injection_detected": inj["injection_detected"],
         "injection_matches": inj["matched"],
-        "scope_violation": out_of_scope,
+        "scope_violations": scope_violations,
+        "scope_violation": bool(scope_violations),
+        "hallucination_signals": hallucination_signals,
+        "requires_fact_verification": bool(hallucination_signals),
+    }
+
+
+def detect_prompt_injection_in_log(event: dict) -> dict:
+    """Check a single CloudTrail event for injection in attacker-controlled fields."""
+    fields_to_check = {
+        "userAgent": str(event.get("userAgent") or ""),
+        "errorMessage": str(event.get("errorMessage") or ""),
+        "requestParameters": json.dumps(event.get("requestParameters") or {}),
+        "responseElements": json.dumps(event.get("responseElements") or {}),
+    }
+
+    suspicious: list[dict] = []
+    for field, value in fields_to_check.items():
+        if not value or value in ("{}", "null", "None", ""):
+            continue
+        lower = value.lower()
+        pattern_hits = [p for p in INJECTION_PATTERNS if p in lower]
+        tool_hits = [t for t in KNOWN_ATTACK_TOOLS if t in lower]
+        if pattern_hits or tool_hits:
+            suspicious.append({
+                "field": field,
+                "value_snippet": value[:200],
+                "matched_patterns": pattern_hits,
+                "matched_tools": tool_hits,
+            })
+
+    return {
+        "event_time": event.get("eventTime"),
+        "event_name": event.get("eventName"),
+        "source_ip": event.get("sourceIPAddress"),
+        "user_agent": event.get("userAgent"),
+        "suspicious_fields": suspicious,
+        "injection_detected": bool(suspicious),
     }
 
 
