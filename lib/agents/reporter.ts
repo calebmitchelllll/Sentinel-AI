@@ -1,9 +1,27 @@
 import { callNemotron } from '../nemotron'
 
-const SYSTEM_PROMPT = `You are a JSON writer for security reports. Given structured facts about a security incident, output ONLY valid JSON. No markdown. No explanation. Start with { end with }.
+const SYSTEM_PROMPT = `You are a JSON writer for AWS security incident reports. You receive structured facts extracted from a real investigation. Fill in those facts and return a JSON object.
 
-Required format:
-{"executiveSummary":"<1 sentence with real attacker IPs, IAM user, and what happened>","severityScore":"<CRITICAL|HIGH|MEDIUM|LOW>","attackTimeline":[{"time":"<ISO8601 timestamp>","event":"<AWS API call name>","significance":"<what the attacker achieved>"}],"rootCause":"<how access was gained>","blastRadius":"<what was compromised or accessed>","immediateActions":["<specific aws cli command>","<specific aws cli command>"],"longtermActions":["<specific hardening step>","<specific hardening step>"],"agentDebateSummary":"<1 sentence on what agents agreed or disagreed on>"}`
+Rules:
+- Fill in real values from the investigation data provided. Do not use placeholder text like [...] or <...> or example values.
+- Do not leave any field as a template or skeleton. If you do not have data for a field, use an empty string "" or empty array [].
+- Return ONLY the JSON object. No explanation, no markdown, no code fences, no text before or after the JSON.
+- Start your response with { and end with }.
+
+JSON structure (all fields required):
+{
+  "executiveSummary": "",
+  "severityScore": "",
+  "attackTimeline": [],
+  "rootCause": "",
+  "blastRadius": "",
+  "immediateActions": [],
+  "longtermActions": [],
+  "agentDebateSummary": ""
+}
+
+attackTimeline items must be objects with exactly these keys: {"time":"","event":"","significance":""}
+immediateActions and longtermActions must be arrays of plain strings.`
 
 function extractIPs(context: string): string[] {
   return Array.from(new Set(context.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || []))
@@ -219,7 +237,30 @@ const PLACEHOLDER_STRINGS = [
   'one sentence', 'ISO8601', 'API call name', 'what the attacker achieved',
   'concrete remediation', 'hardening recommendation', 'CRITICAL|HIGH|MEDIUM|LOW',
   'how access was gained', 'what was compromised', 'agents agreed or disagreed',
+  '[...', '<...', 'placeholder', 'example value',
 ]
+
+// Attempts three increasingly lenient parses and returns the first that succeeds.
+function extractJSON(raw: string): any | null {
+  // 1. Strip markdown code fences, then try parsing the whole cleaned string
+  const cleaned = raw
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/g, '')
+    .trim()
+  try { return JSON.parse(cleaned) } catch {}
+
+  // 2. Find the largest {...} block and try parsing it verbatim
+  const blockMatch = cleaned.match(/\{[\s\S]*\}/)
+  if (!blockMatch) return null
+  const block = blockMatch[0]
+  try { return JSON.parse(block) } catch {}
+
+  // 3. Fix the most common generation errors (trailing commas) and try once more
+  const patched = block.replace(/,(\s*[}\]])/g, '$1')
+  try { return JSON.parse(patched) } catch {}
+
+  return null
+}
 
 function isPlaceholderOutput(parsed: any): boolean {
   const text = JSON.stringify(parsed).toLowerCase()
@@ -268,12 +309,12 @@ export async function runReporter(context: string): Promise<string> {
     const result = await callNemotron(
       SYSTEM_PROMPT,
       `Generate the JSON incident report from these security findings:\n\n${facts}`,
-      800
+      800,
+      true
     )
     console.log('[Reporter NIM output]', result.slice(0, 300))
-    const jsonMatch = result.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0])
+    const parsed = extractJSON(result)
+    if (parsed) {
       const placeholder = isPlaceholderOutput(parsed)
       console.log('[Reporter NIM parsed] executiveSummary:', parsed.executiveSummary?.slice(0, 100), '| placeholder:', placeholder)
       if (
@@ -286,7 +327,7 @@ export async function runReporter(context: string): Promise<string> {
         return JSON.stringify(parsed)
       }
     } else {
-      console.log('[Reporter NIM] No JSON match in output')
+      console.log('[Reporter NIM] No valid JSON found in output')
     }
   } catch (err) {
     console.log('[Reporter NIM error]', err)

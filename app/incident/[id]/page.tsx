@@ -19,6 +19,9 @@ interface MetaResult {
   injection_detected: boolean
   out_of_scope: boolean
   verdict: 'healthy' | 'compromised'
+  hallucination_risk?: number
+  warning?: string | null
+  reason?: string
 }
 
 function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
@@ -75,7 +78,7 @@ function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
                 </span>
 
                 {/* Right: flags */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   {a.injection_detected && (
                     <span className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded">
                       INJECTION DETECTED
@@ -86,7 +89,13 @@ function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
                       OUT OF SCOPE
                     </span>
                   )}
-                  {!a.injection_detected && !a.out_of_scope && (
+                  {a.verdict === 'compromised' && !a.injection_detected && !a.out_of_scope && (
+                    <span className="text-xs font-mono text-red-400">{a.reason || 'Flagged by meta check'}</span>
+                  )}
+                  {a.warning && a.verdict !== 'compromised' && (
+                    <span className="text-xs font-mono text-yellow-400">{a.warning}</span>
+                  )}
+                  {a.verdict === 'healthy' && !a.injection_detected && !a.out_of_scope && !a.warning && (
                     <span className="text-xs font-mono text-[#555]">no flags</span>
                   )}
                 </div>
