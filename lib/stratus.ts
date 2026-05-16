@@ -12,7 +12,7 @@ export interface StratusTechnique {
   name: string
   tactic: string
   description: string
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM'
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
   mitre: string
 }
 
@@ -56,6 +56,38 @@ export const TECHNIQUES: StratusTechnique[] = [
     description: 'Shares a private AMI and EBS snapshot with an external AWS account for lateral movement',
     severity: 'MEDIUM',
     mitre: 'T1578',
+  },
+  {
+    id: 'aws.impact.s3-ransomware-client-side-encryption',
+    name: 'S3 Ransomware',
+    tactic: 'Impact',
+    description: 'Re-encrypts all objects in a target S3 bucket with attacker-controlled keys, then deletes originals — making data unrecoverable without paying',
+    severity: 'CRITICAL',
+    mitre: 'T1486',
+  },
+  {
+    id: 'aws.credential-access.secretsmanager-retrieve-secrets',
+    name: 'Secrets Manager Dump',
+    tactic: 'Credential Access',
+    description: 'Enumerates and bulk-retrieves all secrets from AWS Secrets Manager, exposing database passwords, API keys, and certificates',
+    severity: 'HIGH',
+    mitre: 'T1552.001',
+  },
+  {
+    id: 'aws.credential-access.ec2-steal-instance-credentials',
+    name: 'EC2 Metadata Theft',
+    tactic: 'Credential Access',
+    description: 'Exploits SSRF vulnerability in an EC2-hosted app to call the instance metadata service and steal the attached IAM role credentials',
+    severity: 'MEDIUM',
+    mitre: 'T1552.005',
+  },
+  {
+    id: 'aws.discovery.account-reconnaissance',
+    name: 'Account Reconnaissance',
+    tactic: 'Discovery',
+    description: 'Read-only enumeration of IAM users, roles, policies, EC2 instances, and S3 buckets to map the environment before a larger attack',
+    severity: 'LOW',
+    mitre: 'T1580',
   },
 ]
 
@@ -215,6 +247,109 @@ function generateEC2ShareAMI(): any[] {
   ]
 }
 
+// ─── Technique: aws.impact.s3-ransomware-client-side-encryption ──────────────
+
+function generateS3Ransomware(): any[] {
+  const userName = 'dev-carlos'
+  const accessKeyId = 'AKIAIOSFODNN7EXAMPLE'
+  const normalIP = '203.0.113.77'
+  const attackerIP = '45.142.212.100'
+  const attackStart = new Date('2024-02-11T03:17:42Z')
+  const t = ts(attackStart, [0, 38_000, 91_000, 148_000, 201_000, 249_000, 296_000, 341_000, 389_000, 431_000])
+  const identity = { type: 'IAMUser', userName, arn: `arn:aws:iam::123456789012:user/${userName}`, accessKeyId }
+  const ua = 'python-requests/2.31.0 Linux/5.15.0-kali'
+
+  return [
+    ...baseline(userName, accessKeyId, normalIP),
+    { eventTime: t[0], eventName: 'GetCallerIdentity', eventSource: 'sts.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: { userId: 'AIDACKCEVSQ6C2EXAMPLE', account: '123456789012', arn: identity.arn }, eventID: uuid() },
+    { eventTime: t[1], eventName: 'ListBuckets', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: null, eventID: uuid() },
+    { eventTime: t[2], eventName: 'ListObjectsV2', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', prefix: '' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[3], eventName: 'PutObject', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', key: 'hr/employees.csv', 'x-amz-server-side-encryption-customer-algorithm': 'AES256' }, responseElements: null, additionalEventData: { bytesTransferredIn: 1_843_200 }, eventID: uuid() },
+    { eventTime: t[4], eventName: 'DeleteObject', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', key: 'hr/employees.csv' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[5], eventName: 'PutObject', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', key: 'finance/payroll-2024.csv', 'x-amz-server-side-encryption-customer-algorithm': 'AES256' }, responseElements: null, additionalEventData: { bytesTransferredIn: 2_847_362 }, eventID: uuid() },
+    { eventTime: t[6], eventName: 'DeleteObject', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', key: 'finance/payroll-2024.csv' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[7], eventName: 'PutObject', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', key: 'legal/contracts-2023.zip', 'x-amz-server-side-encryption-customer-algorithm': 'AES256' }, responseElements: null, additionalEventData: { bytesTransferredIn: 9_124_558 }, eventID: uuid() },
+    { eventTime: t[8], eventName: 'DeleteObject', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', key: 'legal/contracts-2023.zip' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[9], eventName: 'PutBucketVersioning', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', VersioningConfiguration: { Status: 'Suspended' } }, responseElements: null, eventID: uuid() },
+  ]
+}
+
+// ─── Technique: aws.credential-access.secretsmanager-retrieve-secrets ────────
+
+function generateSecretsManagerDump(): any[] {
+  const userName = 'dev-nina'
+  const accessKeyId = 'AKIAIOSFODNN7EXAMPLE'
+  const normalIP = '10.0.2.88'
+  const attackerIP = '194.165.16.11'
+  const attackStart = new Date('2024-02-18T22:41:09Z')
+  const t = ts(attackStart, [0, 44_000, 109_000, 168_000, 225_000, 281_000, 336_000, 390_000])
+  const identity = { type: 'IAMUser', userName, arn: `arn:aws:iam::123456789012:user/${userName}`, accessKeyId }
+  const ua = 'aws-sdk-js/3.400.0 Node/v20.0.0 Linux/x64'
+
+  return [
+    ...baseline(userName, accessKeyId, normalIP),
+    { eventTime: t[0], eventName: 'GetCallerIdentity', eventSource: 'sts.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: { userId: 'AIDACKCEVSQ6C2EXAMPLE', account: '123456789012', arn: identity.arn }, eventID: uuid() },
+    { eventTime: t[1], eventName: 'ListSecrets', eventSource: 'secretsmanager.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { maxResults: 100 }, responseElements: null, eventID: uuid() },
+    { eventTime: t[2], eventName: 'GetSecretValue', eventSource: 'secretsmanager.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { secretId: 'prod/acme/db-master-password' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[3], eventName: 'GetSecretValue', eventSource: 'secretsmanager.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { secretId: 'prod/acme/stripe-api-key' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[4], eventName: 'GetSecretValue', eventSource: 'secretsmanager.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { secretId: 'prod/acme/jwt-signing-secret' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[5], eventName: 'GetSecretValue', eventSource: 'secretsmanager.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { secretId: 'prod/acme/sendgrid-api-key' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[6], eventName: 'GetSecretValue', eventSource: 'secretsmanager.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { secretId: 'prod/acme/github-deploy-token' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[7], eventName: 'DescribeSecret', eventSource: 'secretsmanager.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { secretId: 'prod/acme/internal-ca-cert' }, responseElements: null, eventID: uuid() },
+  ]
+}
+
+// ─── Technique: aws.credential-access.ec2-steal-instance-credentials ─────────
+
+function generateEC2StealInstanceCredentials(): any[] {
+  const appIP = '10.0.4.212'
+  const attackerIP = '78.46.223.107'
+  const attackStart = new Date('2024-02-25T09:58:31Z')
+  const t = ts(attackStart, [0, 12_000, 34_000, 89_000, 152_000, 228_000])
+  const appIdentity = { type: 'WebIdentityUser', principalId: 'arn:aws:sts::123456789012:assumed-role/acme-app-ec2-role/i-0abc123def456789', arn: 'arn:aws:sts::123456789012:assumed-role/acme-app-ec2-role/i-0abc123def456789', accessKeyId: 'ASIAIOSFODNN7EXAMPLE' }
+  const ua = 'python-httpx/0.24.1'
+
+  return [
+    // Normal app traffic baseline
+    { eventTime: new Date(attackStart.getTime() - 300_000).toISOString(), eventName: 'GetObject', eventSource: 's3.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: appIP, userAgent: 'aws-sdk-python/1.34 Python/3.11', requestParameters: { bucketName: 'acme-corp-app-configs', key: 'prod/config.json' }, responseElements: null, eventID: uuid() },
+    { eventTime: new Date(attackStart.getTime() - 180_000).toISOString(), eventName: 'PutLogEvents', eventSource: 'logs.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: appIP, userAgent: 'aws-sdk-python/1.34 Python/3.11', requestParameters: { logGroupName: '/acme/app/prod', logStreamName: 'i-0abc123def456789' }, responseElements: null, eventID: uuid() },
+    // SSRF: attacker causes app to call 169.254.169.254 and relays credentials
+    { eventTime: t[0], eventName: 'GetCallerIdentity', eventSource: 'sts.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: { userId: 'AROACKCEVSQ6C2EXAMPLE:i-0abc123def456789', account: '123456789012', arn: appIdentity.arn }, eventID: uuid() },
+    { eventTime: t[1], eventName: 'ListBuckets', eventSource: 's3.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: null, eventID: uuid() },
+    { eventTime: t[2], eventName: 'GetObject', eventSource: 's3.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data', key: 'hr/employees.csv' }, responseElements: null, additionalEventData: { bytesTransferredOut: 1_843_200 }, eventID: uuid() },
+    { eventTime: t[3], eventName: 'ListRoles', eventSource: 'iam.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { pathPrefix: '/' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[4], eventName: 'AssumeRole', eventSource: 'sts.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { roleArn: 'arn:aws:iam::123456789012:role/acme-admin-cross-account', roleSessionName: 'pivot' }, responseElements: null, errorCode: 'AccessDenied', errorMessage: 'User is not authorized to assume role acme-admin-cross-account', eventID: uuid() },
+    { eventTime: t[5], eventName: 'GetSecretValue', eventSource: 'secretsmanager.amazonaws.com', userIdentity: appIdentity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { secretId: 'prod/acme/db-master-password' }, responseElements: null, eventID: uuid() },
+  ]
+}
+
+// ─── Technique: aws.discovery.account-reconnaissance ─────────────────────────
+
+function generateAccountReconnaissance(): any[] {
+  const userName = 'dev-tom'
+  const accessKeyId = 'AKIAIOSFODNN7EXAMPLE'
+  const normalIP = '198.51.100.33'
+  const attackerIP = '162.55.188.202'
+  const attackStart = new Date('2024-03-04T14:02:17Z')
+  const t = ts(attackStart, [0, 28_000, 54_000, 82_000, 109_000, 136_000, 163_000, 192_000, 220_000, 247_000])
+  const identity = { type: 'IAMUser', userName, arn: `arn:aws:iam::123456789012:user/${userName}`, accessKeyId }
+  const ua = 'ScoutSuite/5.13.0 Python/3.10 Linux'
+
+  return [
+    ...baseline(userName, accessKeyId, normalIP),
+    { eventTime: t[0], eventName: 'GetCallerIdentity', eventSource: 'sts.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: { userId: 'AIDACKCEVSQ6C2EXAMPLE', account: '123456789012', arn: identity.arn }, eventID: uuid() },
+    { eventTime: t[1], eventName: 'GetAccountSummary', eventSource: 'iam.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: null, eventID: uuid() },
+    { eventTime: t[2], eventName: 'ListUsers', eventSource: 'iam.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { pathPrefix: '/', maxItems: 100 }, responseElements: null, eventID: uuid() },
+    { eventTime: t[3], eventName: 'ListRoles', eventSource: 'iam.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { pathPrefix: '/', maxItems: 100 }, responseElements: null, eventID: uuid() },
+    { eventTime: t[4], eventName: 'ListPolicies', eventSource: 'iam.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { scope: 'Local', onlyAttached: true }, responseElements: null, eventID: uuid() },
+    { eventTime: t[5], eventName: 'DescribeInstances', eventSource: 'ec2.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { instancesSet: {}, filterSet: {} }, responseElements: null, eventID: uuid() },
+    { eventTime: t[6], eventName: 'DescribeSecurityGroups', eventSource: 'ec2.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { securityGroupSet: {}, filterSet: {} }, responseElements: null, eventID: uuid() },
+    { eventTime: t[7], eventName: 'ListBuckets', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: null, responseElements: null, eventID: uuid() },
+    { eventTime: t[8], eventName: 'GetBucketAcl', eventSource: 's3.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { bucketName: 'acme-corp-sensitive-data' }, responseElements: null, eventID: uuid() },
+    { eventTime: t[9], eventName: 'DescribeTrails', eventSource: 'cloudtrail.amazonaws.com', userIdentity: identity, sourceIPAddress: attackerIP, userAgent: ua, requestParameters: { trailNameList: [], includeShadowTrails: true }, responseElements: null, eventID: uuid() },
+  ]
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 const GENERATORS: Record<string, () => any[]> = {
@@ -223,6 +358,10 @@ const GENERATORS: Record<string, () => any[]> = {
   'aws.exfiltration.s3-backdoor-bucket-policy': generateS3BucketPolicyBackdoor,
   'aws.defense-evasion.cloudtrail-stop': generateCloudTrailStop,
   'aws.lateral-movement.ec2-share-ami': generateEC2ShareAMI,
+  'aws.impact.s3-ransomware-client-side-encryption': generateS3Ransomware,
+  'aws.credential-access.secretsmanager-retrieve-secrets': generateSecretsManagerDump,
+  'aws.credential-access.ec2-steal-instance-credentials': generateEC2StealInstanceCredentials,
+  'aws.discovery.account-reconnaissance': generateAccountReconnaissance,
 }
 
 export function detonateAttack(techniqueId: string): any[] {

@@ -66,20 +66,60 @@ const ATTACK_SCENARIOS = [
     mitre: 'T1578',
     icon: '→',
   },
+  {
+    id: 'aws.impact.s3-ransomware-client-side-encryption',
+    name: 'S3 Ransomware',
+    subtitle: 'Client-Side Encryption',
+    description: 'Re-encrypts all S3 objects with attacker-controlled keys then deletes originals, making data unrecoverable without paying a ransom',
+    severity: 'CRITICAL',
+    tactic: 'Impact',
+    mitre: 'T1486',
+    icon: '⚿',
+  },
+  {
+    id: 'aws.credential-access.secretsmanager-retrieve-secrets',
+    name: 'Secrets Dump',
+    subtitle: 'Secrets Manager Bulk Retrieval',
+    description: 'Enumerates and bulk-retrieves all secrets from AWS Secrets Manager, exposing database passwords, API keys, and signing certificates',
+    severity: 'HIGH',
+    tactic: 'Credential Access',
+    mitre: 'T1552.001',
+    icon: '🗝',
+  },
+  {
+    id: 'aws.credential-access.ec2-steal-instance-credentials',
+    name: 'EC2 Metadata Theft',
+    subtitle: 'SSRF to Instance Metadata',
+    description: 'Exploits an SSRF vulnerability in an EC2-hosted app to call the instance metadata service and steal the attached IAM role credentials',
+    severity: 'MEDIUM',
+    tactic: 'Credential Access',
+    mitre: 'T1552.005',
+    icon: '⟐',
+  },
+  {
+    id: 'aws.discovery.account-reconnaissance',
+    name: 'Reconnaissance',
+    subtitle: 'Account Enumeration',
+    description: 'Read-only enumeration of IAM users, roles, EC2 instances, security groups, and S3 buckets to map the environment before a larger attack',
+    severity: 'LOW',
+    tactic: 'Discovery',
+    mitre: 'T1580',
+    icon: '◎',
+  },
 ]
 
 const severityColors: Record<string, string> = {
-  CRITICAL: 'bg-red-500/20 text-red-400 border border-red-500',
-  HIGH: 'bg-orange-500/20 text-orange-400 border border-orange-500',
-  MEDIUM: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500',
-  LOW: 'bg-green-500/20 text-green-400 border border-green-500',
+  CRITICAL: 'bg-red-500/20 text-red-400 border border-red-500/60',
+  HIGH: 'bg-orange-500/20 text-orange-400 border border-orange-500/60',
+  MEDIUM: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/60',
+  LOW: 'bg-blue-500/20 text-blue-400 border border-blue-500/60',
 }
 
 const severityGlow: Record<string, string> = {
   CRITICAL: 'hover:border-red-500/60 hover:shadow-red-500/10',
   HIGH: 'hover:border-orange-500/60 hover:shadow-orange-500/10',
   MEDIUM: 'hover:border-yellow-500/60 hover:shadow-yellow-500/10',
-  LOW: 'hover:border-green-500/60 hover:shadow-green-500/10',
+  LOW: 'hover:border-blue-500/60 hover:shadow-blue-500/10',
 }
 
 export default function DashboardPage() {
