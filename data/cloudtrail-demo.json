@@ -1,584 +1,238 @@
 {
   "_meta": {
-    "scenario": "Stolen developer AWS access key used for privilege escalation and S3 data exfiltration",
+    "scenario": "Stolen developer AWS access key — privilege escalation, S3 exfiltration, backdoor account creation",
     "account": "123456789012",
     "region": "us-east-1",
-    "victim_user": "dev-john",
+    "victim_user": "dev-sarah",
     "access_key": "AKIAIOSFODNN7EXAMPLE",
     "corp_ip": "203.0.113.10",
-    "attacker_ip": "185.220.101.47",
+    "attacker_ip": "185.234.219.41",
     "attack_date": "2024-01-07",
     "sensitive_bucket": "acme-corp-sensitive-data"
   },
   "Records": [
+
     {
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-01T09:02:11Z",
-      "eventSource": "signin.amazonaws.com",
-      "eventName": "ConsoleLogin",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0",
-      "requestParameters": null,
-      "responseElements": { "ConsoleLogin": "Success" },
-      "eventID": "f3a1e2d0-0001-4aa1-b111-111111111101",
-      "readOnly": false,
-      "eventType": "AwsConsoleSignIn",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-01T09:04:22Z", "eventSource": "signin.amazonaws.com", "eventName": "ConsoleLogin",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0",
+      "requestParameters": null, "responseElements": { "ConsoleLogin": "Success" },
+      "eventID": "demo-day1-0001", "readOnly": false, "eventType": "AwsConsoleSignIn", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-01T09:15:33Z",
-      "eventSource": "ec2.amazonaws.com",
-      "eventName": "DescribeInstances",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": { "filterSet": {}, "instancesSet": {} },
-      "responseElements": null,
-      "eventID": "f3a1e2d0-0001-4aa1-b111-111111111102",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-01T09:18:05Z", "eventSource": "ec2.amazonaws.com", "eventName": "DescribeInstances",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "filterSet": {}, "instancesSet": {} }, "responseElements": null,
+      "eventID": "demo-day1-0002", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-01T10:44:07Z",
-      "eventSource": "s3.amazonaws.com",
-      "eventName": "PutObject",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": {
-        "bucketName": "acme-corp-deployments",
-        "key": "lambda/api-service/v1.4.2.zip"
-      },
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-01T10:45:33Z", "eventSource": "s3.amazonaws.com", "eventName": "PutObject",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "bucketName": "acme-corp-deployments", "key": "lambda/api-service/v1.4.2.zip" },
       "responseElements": { "x-amz-version-id": "v1.4.2" },
-      "eventID": "f3a1e2d0-0001-4aa1-b111-111111111103",
-      "readOnly": false,
-      "eventType": "AwsApiCall",
-      "managementEvent": false,
-      "recipientAccountId": "123456789012"
-    },
-    {
-      "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-02T08:31:19Z",
-      "eventSource": "lambda.amazonaws.com",
-      "eventName": "GetFunction",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": { "functionName": "acme-api-service" },
-      "responseElements": null,
-      "eventID": "f3a1e2d0-0002-4aa1-b111-111111111201",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
-    },
-    {
-      "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-02T11:08:44Z",
-      "eventSource": "s3.amazonaws.com",
-      "eventName": "GetObject",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": {
-        "bucketName": "acme-corp-configs",
-        "key": "environments/prod/app-config.json"
-      },
-      "responseElements": null,
-      "eventID": "f3a1e2d0-0002-4aa1-b111-111111111202",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": false,
-      "recipientAccountId": "123456789012"
-    },
-    {
-      "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-03T14:22:05Z",
-      "eventSource": "lambda.amazonaws.com",
-      "eventName": "UpdateFunctionCode",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": {
-        "functionName": "acme-api-service",
-        "s3Bucket": "acme-corp-deployments",
-        "s3Key": "lambda/api-service/v1.4.3.zip"
-      },
-      "responseElements": { "functionName": "acme-api-service", "codeSize": 2874233 },
-      "eventID": "f3a1e2d0-0003-4aa1-b111-111111111301",
-      "readOnly": false,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
-    },
-    {
-      "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-04T09:05:28Z",
-      "eventSource": "ec2.amazonaws.com",
-      "eventName": "DescribeSecurityGroups",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": { "filterSet": { "items": [{ "name": "group-name", "valueSet": { "items": [{ "value": "prod-*" }] } }] } },
-      "responseElements": null,
-      "eventID": "f3a1e2d0-0004-4aa1-b111-111111111401",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
-    },
-    {
-      "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-05T10:14:52Z",
-      "eventSource": "sts.amazonaws.com",
-      "eventName": "GetCallerIdentity",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": null,
-      "responseElements": {
-        "userId": "AIDAIOSFODNN7EXAMPLE01",
-        "account": "123456789012",
-        "arn": "arn:aws:iam::123456789012:user/dev-john"
-      },
-      "eventID": "f3a1e2d0-0005-4aa1-b111-111111111501",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
-    },
-    {
-      "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-06T16:30:01Z",
-      "eventSource": "s3.amazonaws.com",
-      "eventName": "ListBuckets",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": null,
-      "responseElements": null,
-      "eventID": "f3a1e2d0-0006-4aa1-b111-111111111601",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": false,
-      "recipientAccountId": "123456789012"
-    },
-    {
-      "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-06T16:55:40Z",
-      "eventSource": "cloudwatch.amazonaws.com",
-      "eventName": "DescribeAlarms",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "203.0.113.10",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
-      "requestParameters": { "alarmNamePrefix": "prod-" },
-      "responseElements": null,
-      "eventID": "f3a1e2d0-0006-4aa1-b111-111111111602",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "eventID": "demo-day1-0003", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": false, "recipientAccountId": "123456789012"
     },
 
     {
-      "_comment": "=== DAY 7: ATTACK BEGINS === Attacker using stolen key from Tor exit node 185.220.101.47",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:12:03Z",
-      "eventSource": "sts.amazonaws.com",
-      "eventName": "GetCallerIdentity",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": null,
-      "responseElements": {
-        "userId": "AIDAIOSFODNN7EXAMPLE01",
-        "account": "123456789012",
-        "arn": "arn:aws:iam::123456789012:user/dev-john"
-      },
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222001",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-02T08:30:11Z", "eventSource": "signin.amazonaws.com", "eventName": "ConsoleLogin",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0",
+      "requestParameters": null, "responseElements": { "ConsoleLogin": "Success" },
+      "eventID": "demo-day2-0001", "readOnly": false, "eventType": "AwsConsoleSignIn", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "Attacker enumerates IAM roles",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:13:45Z",
-      "eventSource": "iam.amazonaws.com",
-      "eventName": "ListRoles",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": { "pathPrefix": "/" },
-      "responseElements": null,
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222002",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-02T09:11:47Z", "eventSource": "lambda.amazonaws.com", "eventName": "GetFunction",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "functionName": "acme-api-service" }, "responseElements": null,
+      "eventID": "demo-day2-0002", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "Attacker checks existing policies on the dev user",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:14:58Z",
-      "eventSource": "iam.amazonaws.com",
-      "eventName": "ListAttachedUserPolicies",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": { "userName": "dev-john" },
-      "responseElements": null,
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222003",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-02T11:22:09Z", "eventSource": "s3.amazonaws.com", "eventName": "GetObject",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "bucketName": "acme-corp-configs", "key": "environments/prod/app-config.json" }, "responseElements": null,
+      "eventID": "demo-day2-0003", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": false, "recipientAccountId": "123456789012"
+    },
+
+    {
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-03T14:05:58Z", "eventSource": "lambda.amazonaws.com", "eventName": "UpdateFunctionCode",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "functionName": "acme-api-service", "s3Bucket": "acme-corp-deployments", "s3Key": "lambda/api-service/v1.4.3.zip" },
+      "responseElements": { "functionName": "acme-api-service", "codeSize": 2874233 },
+      "eventID": "demo-day3-0001", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "CRITICAL: Attacker escalates privileges — attaches AdministratorAccess to the dev user",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:15:47Z",
-      "eventSource": "iam.amazonaws.com",
-      "eventName": "AttachUserPolicy",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": {
-        "userName": "dev-john",
-        "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
-      },
-      "responseElements": null,
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222004",
-      "readOnly": false,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-03T15:30:12Z", "eventSource": "ec2.amazonaws.com", "eventName": "DescribeSecurityGroups",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "filterSet": { "items": [{ "name": "group-name", "valueSet": { "items": [{ "value": "prod-*" }] } }] } }, "responseElements": null,
+      "eventID": "demo-day3-0002", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+
+    {
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-04T10:14:00Z", "eventSource": "cloudwatch.amazonaws.com", "eventName": "DescribeAlarms",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "alarmNamePrefix": "prod-" }, "responseElements": null,
+      "eventID": "demo-day4-0001", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "Attacker confirms admin privileges",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:17:02Z",
-      "eventSource": "sts.amazonaws.com",
-      "eventName": "GetCallerIdentity",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": null,
-      "responseElements": {
-        "userId": "AIDAIOSFODNN7EXAMPLE01",
-        "account": "123456789012",
-        "arn": "arn:aws:iam::123456789012:user/dev-john"
-      },
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222005",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-04T13:48:29Z", "eventSource": "rds.amazonaws.com", "eventName": "DescribeDBInstances",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": {}, "responseElements": null,
+      "eventID": "demo-day4-0002", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+
+    {
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-05T09:00:45Z", "eventSource": "s3.amazonaws.com", "eventName": "ListBuckets",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": null, "responseElements": null,
+      "eventID": "demo-day5-0001", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": false, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "Attacker lists all S3 buckets",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:19:15Z",
-      "eventSource": "s3.amazonaws.com",
-      "eventName": "ListBuckets",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": null,
-      "responseElements": null,
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222006",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": false,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-05T11:33:17Z", "eventSource": "sts.amazonaws.com", "eventName": "GetCallerIdentity",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": null, "responseElements": { "userId": "AIDAIOSFODNN7EX000001", "account": "123456789012", "arn": "arn:aws:iam::123456789012:user/dev-sarah" },
+      "eventID": "demo-day5-0002", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+
+    {
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-06T09:20:00Z", "eventSource": "signin.amazonaws.com", "eventName": "ConsoleLogin",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0",
+      "requestParameters": null, "responseElements": { "ConsoleLogin": "Success" },
+      "eventID": "demo-day6-0001", "readOnly": false, "eventType": "AwsConsoleSignIn", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "Attacker lists objects in sensitive data bucket",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:20:33Z",
-      "eventSource": "s3.amazonaws.com",
-      "eventName": "ListObjectsV2",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": {
-        "bucketName": "acme-corp-sensitive-data",
-        "prefix": ""
-      },
-      "responseElements": null,
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222007",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": false,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-06T10:05:44Z", "eventSource": "s3.amazonaws.com", "eventName": "PutObject",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "bucketName": "acme-corp-deployments", "key": "lambda/api-service/v1.4.4.zip" }, "responseElements": { "x-amz-version-id": "v1.4.4" },
+      "eventID": "demo-day6-0002", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": false, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "CRITICAL: Attacker downloads employee PII data",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:21:08Z",
-      "eventSource": "s3.amazonaws.com",
-      "eventName": "GetObject",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": {
-        "bucketName": "acme-corp-sensitive-data",
-        "key": "hr/employees.csv"
-      },
-      "responseElements": {
-        "x-amz-request-id": "EXAMPLE123456789",
-        "x-amz-id-2": "EXAMPLE+xyz"
-      },
-      "additionalEventData": {
-        "bytesTransferredOut": 1843200,
-        "objectSize": 1843200
-      },
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222008",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": false,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-06T14:55:03Z", "eventSource": "ec2.amazonaws.com", "eventName": "DescribeInstances",
+      "awsRegion": "us-east-1", "sourceIPAddress": "203.0.113.10", "userAgent": "aws-cli/2.13.0 Python/3.11.4 Darwin/22.6.0",
+      "requestParameters": { "filterSet": {}, "instancesSet": {} }, "responseElements": null,
+      "eventID": "demo-day6-0003", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+
+    {
+      "_comment": "=== DAY 7 ATTACK: Step 1 — Attacker confirms stolen key is valid (recon) ===",
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:14:22Z", "eventSource": "sts.amazonaws.com", "eventName": "GetCallerIdentity",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": null, "responseElements": { "userId": "AIDAIOSFODNN7EX000001", "account": "123456789012", "arn": "arn:aws:iam::123456789012:user/dev-sarah" },
+      "eventID": "attack-day7-0001", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "CRITICAL: Attacker downloads financial projections",
+      "_comment": "=== DAY 7 ATTACK: Step 2 — Attacker enumerates IAM roles and users ===",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:21:45Z",
-      "eventSource": "s3.amazonaws.com",
-      "eventName": "GetObject",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": {
-        "bucketName": "acme-corp-sensitive-data",
-        "key": "finance/q4-projections.csv"
-      },
-      "responseElements": {
-        "x-amz-request-id": "EXAMPLE123456790",
-        "x-amz-id-2": "EXAMPLE+abc"
-      },
-      "additionalEventData": {
-        "bytesTransferredOut": 204800,
-        "objectSize": 204800
-      },
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222009",
-      "readOnly": true,
-      "eventType": "AwsApiCall",
-      "managementEvent": false,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:15:08Z", "eventSource": "iam.amazonaws.com", "eventName": "ListAttachedUserPolicies",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": { "userName": "dev-sarah" }, "responseElements": null,
+      "eventID": "attack-day7-0002", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "Attacker attempts to delete CloudTrail to cover tracks — fails due to SCP",
+      "_comment": "=== DAY 7 ATTACK: Step 3 — CRITICAL: Privilege escalation to AdministratorAccess ===",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:23:11Z",
-      "eventSource": "cloudtrail.amazonaws.com",
-      "eventName": "DeleteTrail",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": { "name": "arn:aws:cloudtrail:us-east-1:123456789012:trail/acme-audit-trail" },
-      "responseElements": null,
-      "errorCode": "AccessDeniedException",
-      "errorMessage": "Access denied by SCP: DeleteTrail not allowed by organization policy",
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222010",
-      "readOnly": false,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:16:44Z", "eventSource": "iam.amazonaws.com", "eventName": "AttachUserPolicy",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": { "userName": "dev-sarah", "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess" }, "responseElements": null,
+      "eventID": "attack-day7-0003", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
     },
     {
-      "_comment": "Attacker removes AdministratorAccess to cover tracks",
+      "_comment": "=== DAY 7 ATTACK: Step 4 — Attacker lists all S3 buckets with new admin perms ===",
       "eventVersion": "1.08",
-      "userIdentity": {
-        "type": "IAMUser",
-        "principalId": "AIDAIOSFODNN7EXAMPLE01",
-        "arn": "arn:aws:iam::123456789012:user/dev-john",
-        "accountId": "123456789012",
-        "accessKeyId": "AKIAIOSFODNN7EXAMPLE",
-        "userName": "dev-john"
-      },
-      "eventTime": "2024-01-07T08:24:00Z",
-      "eventSource": "iam.amazonaws.com",
-      "eventName": "DetachUserPolicy",
-      "awsRegion": "us-east-1",
-      "sourceIPAddress": "185.220.101.47",
-      "userAgent": "aws-cli/2.13.0 Python/3.11.4 Linux/5.15.0-kali3-amd64",
-      "requestParameters": {
-        "userName": "dev-john",
-        "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
-      },
-      "responseElements": null,
-      "eventID": "a7t4ck00-0007-4bb2-c222-222222222011",
-      "readOnly": false,
-      "eventType": "AwsApiCall",
-      "managementEvent": true,
-      "recipientAccountId": "123456789012"
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:18:55Z", "eventSource": "s3.amazonaws.com", "eventName": "ListBuckets",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": null, "responseElements": null,
+      "eventID": "attack-day7-0004", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": false, "recipientAccountId": "123456789012"
+    },
+    {
+      "_comment": "=== DAY 7 ATTACK: Step 5 — CRITICAL: Exfiltrates employee PII (1.8 MB) ===",
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:20:11Z", "eventSource": "s3.amazonaws.com", "eventName": "GetObject",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": { "bucketName": "acme-corp-sensitive-data", "key": "hr/employees.csv" },
+      "responseElements": { "x-amz-request-id": "ATTACK123456789" },
+      "additionalEventData": { "bytesTransferredOut": 1843200, "objectSize": 1843200 },
+      "eventID": "attack-day7-0005", "readOnly": true, "eventType": "AwsApiCall", "managementEvent": false, "recipientAccountId": "123456789012"
+    },
+    {
+      "_comment": "=== DAY 7 ATTACK: Step 6 — CRITICAL: Creates backdoor admin IAM user ===",
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:21:30Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateUser",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": { "userName": "svc-backup-monitor" }, "responseElements": { "user": { "userName": "svc-backup-monitor", "userId": "AIDABACKDOOR000001", "arn": "arn:aws:iam::123456789012:user/svc-backup-monitor" } },
+      "eventID": "attack-day7-0006", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+    {
+      "_comment": "=== DAY 7 ATTACK: Step 7 — Creates access key for backdoor user ===",
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:22:04Z", "eventSource": "iam.amazonaws.com", "eventName": "CreateAccessKey",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": { "userName": "svc-backup-monitor" }, "responseElements": { "accessKey": { "accessKeyId": "AKIABACKDOOR00001", "status": "Active", "userName": "svc-backup-monitor" } },
+      "eventID": "attack-day7-0007", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+    {
+      "_comment": "=== DAY 7 ATTACK: Step 8 — Attacker attempts to delete CloudTrail (blocked by SCP) ===",
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:23:18Z", "eventSource": "cloudtrail.amazonaws.com", "eventName": "DeleteTrail",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": { "name": "arn:aws:cloudtrail:us-east-1:123456789012:trail/acme-audit-trail" }, "responseElements": null,
+      "errorCode": "AccessDeniedException", "errorMessage": "Access denied by SCP: DeleteTrail not permitted by organization policy",
+      "eventID": "attack-day7-0008", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+    {
+      "_comment": "=== DAY 7 ATTACK: Step 9 — Attacker cleans up by removing AdministratorAccess ===",
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDAIOSFODNN7EX000001", "arn": "arn:aws:iam::123456789012:user/dev-sarah", "accountId": "123456789012", "accessKeyId": "AKIAIOSFODNN7EXAMPLE", "userName": "dev-sarah" },
+      "eventTime": "2024-01-07T03:24:01Z", "eventSource": "iam.amazonaws.com", "eventName": "DetachUserPolicy",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "aws-cli/2.13.0 Python/3.11.6 Linux/5.15.0-kali3-amd64",
+      "requestParameters": { "userName": "dev-sarah", "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess" }, "responseElements": null,
+      "eventID": "attack-day7-0009", "readOnly": false, "eventType": "AwsApiCall", "managementEvent": true, "recipientAccountId": "123456789012"
+    },
+    {
+      "_comment": "=== DAY 7 ATTACK: Step 10 — Backdoor user ConsoleLogin from foreign IP confirms persistence ===",
+      "eventVersion": "1.08",
+      "userIdentity": { "type": "IAMUser", "principalId": "AIDABACKDOOR000001", "arn": "arn:aws:iam::123456789012:user/svc-backup-monitor", "accountId": "123456789012", "accessKeyId": "AKIABACKDOOR00001", "userName": "svc-backup-monitor" },
+      "eventTime": "2024-01-07T03:26:44Z", "eventSource": "signin.amazonaws.com", "eventName": "ConsoleLogin",
+      "awsRegion": "us-east-1", "sourceIPAddress": "185.234.219.41", "userAgent": "Mozilla/5.0 (X11; Linux x86_64) Chrome/119.0.0.0",
+      "requestParameters": null, "responseElements": { "ConsoleLogin": "Success" },
+      "eventID": "attack-day7-0010", "readOnly": false, "eventType": "AwsConsoleSignIn", "managementEvent": true, "recipientAccountId": "123456789012"
     }
+
   ]
 }
