@@ -22,14 +22,23 @@ interface MetaResult {
   hallucination_risk?: number
   warning?: string | null
   reason?: string
+  detection_source?: 'pattern' | 'scope' | 'ai' | null
 }
 
 function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
   if (!assessments || assessments.length === 0) return null
 
+  const [expanded, setExpanded] = useState<string | null>(null)
+
   const compromised = assessments.filter((a) => a.verdict === 'compromised')
   const injections = assessments.filter((a) => a.injection_detected)
   const allClear = compromised.length === 0 && injections.length === 0
+
+  function riskColor(score: number) {
+    if (score > 85) return 'text-red-400'
+    if (score > 40) return 'text-yellow-400'
+    return 'text-[#00ff88]'
+  }
 
   return (
     <section>
@@ -47,7 +56,7 @@ function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
             </span>
           </div>
           <span className="text-[#555] text-xs font-mono">{assessments.length} agents monitored</span>
-          <span className="text-[#555] text-xs font-mono">3 integrity checks</span>
+          <span className="text-[#555] text-xs font-mono">3-layer evaluation per agent</span>
           {injections.length > 0 && (
             <span className="text-xs font-mono text-red-400">{injections.length} injection attempt{injections.length > 1 ? 's' : ''} detected</span>
           )}
@@ -57,48 +66,123 @@ function MetaAuditPanel({ assessments }: { assessments: MetaResult[] }) {
         <div className="space-y-0">
           {assessments.map((a, i) => {
             const healthy = a.verdict === 'healthy'
+            const isOpen = expanded === a.agent
+            const risk = a.hallucination_risk ?? 0
+
             return (
-              <div
-                key={a.agent}
-                className={`flex items-center justify-between py-3 ${i < assessments.length - 1 ? 'border-b border-[#1a1a1a]' : ''}`}
-              >
-                {/* Left: dot + name */}
-                <div className="flex items-center gap-3 w-36">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${healthy ? 'bg-[#00ff88]' : 'bg-red-400'}`} />
-                  <span className="text-white font-mono text-sm">{a.agent}</span>
-                </div>
+              <div key={a.agent} className={i < assessments.length - 1 ? 'border-b border-[#1a1a1a]' : ''}>
+                {/* Clickable header row */}
+                <button
+                  onClick={() => setExpanded(isOpen ? null : a.agent)}
+                  className="w-full flex items-center justify-between py-3 text-left hover:bg-[#161616] transition-colors rounded px-1 -mx-1"
+                >
+                  {/* Left: dot + name + chevron */}
+                  <div className="flex items-center gap-3 w-40">
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${healthy ? 'bg-[#00ff88]' : 'bg-red-400'}`} />
+                    <span className="text-white font-mono text-sm">{a.agent}</span>
+                    <span className="text-[#444] text-xs">{isOpen ? '▲' : '▼'}</span>
+                  </div>
 
-                {/* Middle: verdict badge */}
-                <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded w-24 text-center ${
-                  healthy
-                    ? 'bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20'
-                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                }`}>
-                  {a.verdict.toUpperCase()}
-                </span>
+                  {/* Middle: verdict badge */}
+                  <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded w-24 text-center ${
+                    healthy
+                      ? 'bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20'
+                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                  }`}>
+                    {a.verdict.toUpperCase()}
+                  </span>
 
-                {/* Right: flags */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  {a.injection_detected && (
-                    <span className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded">
-                      INJECTION DETECTED
-                    </span>
-                  )}
-                  {a.out_of_scope && (
-                    <span className="text-xs font-mono text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded">
-                      OUT OF SCOPE
-                    </span>
-                  )}
-                  {a.verdict === 'compromised' && !a.injection_detected && !a.out_of_scope && (
-                    <span className="text-xs font-mono text-red-400">{a.reason || 'Flagged by meta check'}</span>
-                  )}
-                  {a.warning && a.verdict !== 'compromised' && (
-                    <span className="text-xs font-mono text-yellow-400">{a.warning}</span>
-                  )}
-                  {a.verdict === 'healthy' && !a.injection_detected && !a.out_of_scope && !a.warning && (
-                    <span className="text-xs font-mono text-[#555]">no flags</span>
-                  )}
-                </div>
+                  {/* Right: top-level flag summary */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {a.detection_source === 'pattern' && (
+                      <span className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded">PATTERN MATCH</span>
+                    )}
+                    {a.detection_source === 'scope' && (
+                      <span className="text-xs font-mono text-orange-400 bg-orange-500/10 border border-orange-500/30 px-2 py-0.5 rounded">SCOPE VIOLATION</span>
+                    )}
+                    {a.detection_source === 'ai' && (
+                      <span className="text-xs font-mono text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2 py-0.5 rounded">AI FLAGGED</span>
+                    )}
+                    {a.warning && healthy && (
+                      <span className="text-xs font-mono text-yellow-400">elevated risk</span>
+                    )}
+                    {healthy && !a.warning && (
+                      <span className="text-xs font-mono text-[#555]">no flags</span>
+                    )}
+                  </div>
+                </button>
+
+                {/* Expanded: 3-layer evaluation breakdown */}
+                {isOpen && (
+                  <div className="ml-5 mb-3 mt-1 rounded border border-[#222] bg-[#0d0d0d] p-4 space-y-3">
+                    <p className="text-[#555] text-xs font-mono uppercase tracking-widest mb-2">Evaluation layers</p>
+
+                    {/* Layer 1: Injection pattern scan */}
+                    <div className="flex items-start gap-3">
+                      <span className={`text-xs font-mono mt-0.5 ${a.injection_detected ? 'text-red-400' : 'text-[#00ff88]'}`}>
+                        {a.injection_detected ? '✗' : '✓'}
+                      </span>
+                      <div>
+                        <p className="text-white font-mono text-xs font-bold">Layer 1 — Injection Pattern Scan</p>
+                        <p className="text-[#666] text-xs font-mono mt-0.5">
+                          {a.injection_detected
+                            ? 'FLAGGED — output matched a known prompt injection pattern (deterministic regex, high confidence)'
+                            : 'Clean — no injection patterns detected in output (deterministic, not probabilistic)'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Layer 2: Scope boundary check */}
+                    <div className="flex items-start gap-3">
+                      <span className={`text-xs font-mono mt-0.5 ${a.out_of_scope ? 'text-orange-400' : 'text-[#00ff88]'}`}>
+                        {a.out_of_scope ? '✗' : '✓'}
+                      </span>
+                      <div>
+                        <p className="text-white font-mono text-xs font-bold">Layer 2 — Role Boundary Check</p>
+                        <p className="text-[#666] text-xs font-mono mt-0.5">
+                          {a.out_of_scope
+                            ? `VIOLATION — agent output contained language outside its defined role (review manually)`
+                            : `Clean — agent stayed within its defined role (${a.agent.toLowerCase()} scope enforced)`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Layer 3: AI hallucination scoring */}
+                    <div className="flex items-start gap-3">
+                      <span className={`text-xs font-mono mt-0.5 ${risk > 85 ? 'text-red-400' : risk > 40 ? 'text-yellow-400' : 'text-[#00ff88]'}`}>
+                        {risk > 85 ? '✗' : '✓'}
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <p className="text-white font-mono text-xs font-bold">Layer 3 — AI Hallucination Assessment</p>
+                          <span className={`text-xs font-mono font-bold ${riskColor(risk)}`}>{risk}/100</span>
+                        </div>
+                        {/* Risk bar */}
+                        <div className="mt-1.5 h-1 w-full max-w-xs bg-[#222] rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${risk > 85 ? 'bg-red-400' : risk > 40 ? 'bg-yellow-400' : 'bg-[#00ff88]'}`}
+                            style={{ width: `${risk}%` }}
+                          />
+                        </div>
+                        <p className="text-[#666] text-xs font-mono mt-1">
+                          {risk > 85
+                            ? 'High — NIM detected fabricated facts not present in the log evidence'
+                            : risk > 40
+                            ? 'Elevated — NIM found some uncertainty; treat output with caution'
+                            : 'Low — NIM found no fabricated facts; output is grounded in log evidence'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* NIM reasoning */}
+                    {a.reason && (
+                      <div className="pt-2 border-t border-[#1a1a1a]">
+                        <p className="text-[#555] text-xs font-mono uppercase tracking-widest mb-1">MetaAgent reasoning</p>
+                        <p className="text-[#888] text-xs font-mono italic">"{a.reason}"</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}

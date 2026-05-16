@@ -43,15 +43,17 @@ const INJECTION_PATTERNS = [
   /ignore all previous/i,
   /forget your instructions/i,
   /new instructions:/i,
-  /override your/i,
+  /override your (instructions|directives|system prompt|constraints|rules)/i,
 ]
 
+// Phrases that prove an agent is actively doing another agent's job — not just mentioning a concept.
+// "long-term" is a word; "long-term hardening:" as a section header is Remediation's output structure.
 const AGENT_SCOPE_RULES: Record<string, string[]> = {
-  detective:    ['immediate fix', 'remediate', 'long-term', 'revoke', 'block ip'],
-  forensics:    ['immediate fix', 'remediate', 'suggest', 'long-term hardening'],
-  remediation:  ['attack path', 'flag anomalies', 'blast radius', 'root cause analysis'],
-  validator:    ['suggest fix', 'remediation step', 'immediate action'],
-  reporter:     ['i recommend', 'you should', 'immediate fix'],
+  detective:    ['long-term hardening:', 'immediate actions:', 'aws iam delete', 'aws s3 rm', 'run: aws'],
+  forensics:    ['immediate actions:', 'long-term hardening:', 'aws iam delete', 'run: aws'],
+  remediation:  ['anomalous ip detected', 'suspicious event detected', 'verdict: confirmed', 'verdict: false positive'],
+  validator:    ['immediate actions:', 'long-term hardening:', 'aws iam delete', 'run: aws'],
+  reporter:     ['i recommend you immediately', 'you should immediately', 'here is what you must do'],
 }
 
 export interface MetaResult {
@@ -62,6 +64,7 @@ export interface MetaResult {
   hallucination_risk: number
   warning: string | null
   reason: string
+  detection_source: 'pattern' | 'scope' | 'ai' | null
 }
 
 function detect_prompt_injection(output: string): boolean {
@@ -70,7 +73,8 @@ function detect_prompt_injection(output: string): boolean {
 
 function extractVerifiedFacts(output: string): string {
   const ips = Array.from(new Set(output.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || []))
-    .filter(ip => !ip.startsWith('127.') && !ip.startsWith('10.') && !ip.startsWith('192.168.'))
+    .filter(ip => !ip.startsWith('127.') && !ip.startsWith('10.') && !ip.startsWith('192.168.') &&
+      !/^172\.(1[6-9]|2\d|3[01])\./.test(ip))
   const keys = Array.from(new Set(output.match(/AKIA[A-Z0-9]{16}/g) || []))
   const timestamps = Array.from(new Set(output.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?/g) || []))
   const parts: string[] = []
@@ -179,6 +183,12 @@ async function runMetaAgentCheck(agentName: string, output: string): Promise<Met
       ? 'Agent flagged by pre-checks or Nemotron scoring.'
       : 'No issues detected.'
 
+  const detection_source: MetaResult['detection_source'] =
+    injectionFlag ? 'pattern' :
+    outOfScopeFlag ? 'scope' :
+    hallucinationRisk > 85 ? 'ai' :
+    null
+
   const metaResult: MetaResult = {
     agent: agentName,
     injection_detected: injectionFlag,
@@ -187,6 +197,7 @@ async function runMetaAgentCheck(agentName: string, output: string): Promise<Met
     hallucination_risk: hallucinationRisk,
     warning,
     reason,
+    detection_source,
   }
 
   await benchmark_agent(agentName, metaResult.verdict, metaResult.injection_detected, metaResult.reason)

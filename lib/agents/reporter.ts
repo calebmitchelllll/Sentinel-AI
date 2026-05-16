@@ -23,9 +23,14 @@ JSON structure (all fields required):
 attackTimeline items must be objects with exactly these keys: {"time":"","event":"","significance":""}
 immediateActions and longtermActions must be arrays of plain strings.`
 
+function isPrivateIP(ip: string): boolean {
+  return ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
+}
+
 function extractIPs(context: string): string[] {
   return Array.from(new Set(context.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || []))
-    .filter(ip => !ip.startsWith('127.') && !ip.startsWith('10.0') && !ip.startsWith('192.168'))
+    .filter(ip => !isPrivateIP(ip))
 }
 
 function extractKeys(context: string): string[] {
@@ -109,7 +114,7 @@ function buildReportFromFacts(context: string): any {
   const timelineBlock = getRawSection(context, 'STRUCTURED_TIMELINE')
   const timelineIPs = timelineBlock
     ? Array.from(new Set(timelineBlock.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || []))
-        .filter(ip => !ip.startsWith('127.') && !ip.startsWith('10.0') && !ip.startsWith('192.168'))
+        .filter(ip => !isPrivateIP(ip))
     : []
   const effectiveIPs = timelineIPs.length > 0 ? timelineIPs : ips
 
@@ -127,7 +132,7 @@ function buildReportFromFacts(context: string): any {
         attackTimeline.push({
           time: parts[0].trim(),
           event: parts[1].trim(),
-          significance: `${parts[1].trim()} by ${parts[3]?.trim() || 'unknown'} from ${parts[2]?.trim() || 'unknown'}`,
+          significance: parts[2].trim(),
         })
       }
       if (attackTimeline.length >= 5) break
