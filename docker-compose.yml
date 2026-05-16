@@ -1,0 +1,50 @@
+services:
+  nemoclaw:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+    container_name: sentinel-nemoclaw
+    environment:
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-${NEMOCLAW_API_KEY:-ollama-local}}
+      - NEMOCLAW_API_KEY=${NEMOCLAW_API_KEY:-${NVIDIA_API_KEY:-ollama-local}}
+      - NEMOTRON_MODEL=${NEMOTRON_MODEL:-nvidia/llama-3.1-nemotron-70b-instruct}
+      - NEMOTRON_BASE_URL=${NEMOTRON_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PORT=8000
+      - CORS_ORIGINS=http://localhost:3000,http://web:3000
+    # Allows the orchestrator to reach Ollama running on the Brev host at
+    # http://host.docker.internal:11434/v1 (required on Linux hosts).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsSL", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.next
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    container_name: sentinel-web
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - NEMOCLAW_SERVICE_URL=http://nemoclaw:8000
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      nemoclaw:
+        condition: service_started
+    restart: unless-stopped

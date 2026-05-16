@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+html, body {
+  background-color: #0a0e14;
+  color: #d6deeb;
+  font-family: var(--font-sans);
+  min-height: 100%;
+}
+
+* { box-sizing: border-box; }
+
+::selection { background: #2563eb55; color: #fff; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a0e14; }
+::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+.scanline {
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 255, 255, 0.012) 3px,
+    rgba(255, 255, 255, 0.012) 4px
+  );
+}
+
+.glow-green { box-shadow: 0 0 18px rgba(34, 197, 94, 0.25); }
+.glow-red { box-shadow: 0 0 18px rgba(239, 68, 68, 0.35); }
+.glow-yellow { box-shadow: 0 0 18px rgba(234, 179, 8, 0.25); }
+.glow-blue { box-shadow: 0 0 18px rgba(59, 130, 246, 0.25); }
+
+.terminal {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.prose-terminal h1, .prose-terminal h2, .prose-terminal h3 {
+  font-family: var(--font-mono);
+  color: #d6deeb;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.prose-terminal h1 { font-size: 1.5rem; }
+.prose-terminal h2 { font-size: 1.2rem; color: #60a5fa; }
+.prose-terminal h3 { font-size: 1.05rem; color: #8b9bb4; }
+.prose-terminal p { color: #d6deeb; line-height: 1.6; margin: 0.5rem 0; }
+.prose-terminal code { background: #141a23; padding: 1px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.9em; color: #a78bfa; }
+.prose-terminal pre { background: #0f141b; padding: 0.75rem; border-radius: 6px; overflow-x: auto; border: 1px solid #1f2937; }
+.prose-terminal pre code { background: transparent; padding: 0; color: #d6deeb; }
+.prose-terminal ul { list-style: none; padding-left: 1rem; }
+.prose-terminal ul li { position: relative; padding-left: 1rem; margin: 0.25rem 0; }
+.prose-terminal ul li::before { content: "›"; position: absolute; left: 0; color: #60a5fa; }
+.prose-terminal a { color: #22d3ee; text-decoration: underline; }
+.prose-terminal table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+.prose-terminal th, .prose-terminal td { border: 1px solid #1f2937; padding: 0.4rem 0.6rem; text-align: left; font-size: 0.9rem; }
+.prose-terminal th { background: #141a23; color: #8b9bb4; }
