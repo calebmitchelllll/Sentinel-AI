@@ -1,5 +1,18 @@
+// When BREV_NIM_URL is set, calls go to the local Nemotron NIM running on the Brev GPU.
+// Otherwise falls back to OpenRouter (for local dev / non-Brev environments).
+// Both use the OpenAI-compatible chat completions API — no other code changes needed.
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1/chat/completions";
 export const NEMOTRON_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct";
+
+function inferenceURL(): string {
+  return process.env.BREV_NIM_URL
+    ? `${process.env.BREV_NIM_URL}/v1/chat/completions`
+    : OPENROUTER_BASE;
+}
+
+function isLocalNIM(): boolean {
+  return !!process.env.BREV_NIM_URL;
+}
 
 export interface Message {
   role: "system" | "user" | "assistant";
@@ -14,6 +27,10 @@ export interface CallOptions {
 }
 
 function headers() {
+  if (isLocalNIM()) {
+    // NIM on Brev doesn't need an auth header — it's local
+    return { "Content-Type": "application/json" };
+  }
   return {
     Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
     "Content-Type": "application/json",
@@ -22,16 +39,22 @@ function headers() {
   };
 }
 
+// NIM uses "meta/llama-3.1-70b-nemotron" as the model string locally;
+// OpenRouter uses the full namespaced form. This picks the right one.
+function modelName(): string {
+  return isLocalNIM() ? "meta/llama-3.1-70b-nemotron" : NEMOTRON_MODEL;
+}
+
 export async function callNemotron(opts: CallOptions): Promise<string> {
   if (process.env.MOCK_AGENTS === "true") {
     return getMockResponse(opts.messages);
   }
 
-  const res = await fetch(OPENROUTER_BASE, {
+  const res = await fetch(inferenceURL(), {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
-      model: NEMOTRON_MODEL,
+      model: modelName(),
       messages: opts.messages,
       temperature: opts.temperature ?? 0.2,
       max_tokens: opts.maxTokens ?? 2048,
@@ -41,7 +64,7 @@ export async function callNemotron(opts: CallOptions): Promise<string> {
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`OpenRouter ${res.status}: ${body}`);
+    throw new Error(`${isLocalNIM() ? "NIM" : "OpenRouter"} ${res.status}: ${body}`);
   }
 
   const data = await res.json();
@@ -58,11 +81,11 @@ export async function streamNemotron(
     return mock;
   }
 
-  const res = await fetch(OPENROUTER_BASE, {
+  const res = await fetch(inferenceURL(), {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
-      model: NEMOTRON_MODEL,
+      model: modelName(),
       messages: opts.messages,
       temperature: opts.temperature ?? 0.2,
       max_tokens: opts.maxTokens ?? 2048,
@@ -72,7 +95,7 @@ export async function streamNemotron(
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`OpenRouter ${res.status}: ${body}`);
+    throw new Error(`${isLocalNIM() ? "NIM" : "OpenRouter"} ${res.status}: ${body}`);
   }
 
   const reader = res.body!.getReader();
